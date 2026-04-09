@@ -46,11 +46,18 @@ void Core::FrameAdvance() {
 void Core::OnProsessing() {}
 
 void Core::BuildObjects() {
-	camera = new CCamera();
-	camera->SetPosition(0.f, 0.f, -10.f);
+	m_pCamera = new CCamera();
+	m_pCamera->SetPosition(0.f, 0.f, -10.f);
+	m_pCamera->SetRotation(0.f, 0.f, 0.f);
+	m_pCamera->SetViewMatrix();
 
+	m_pViewport = new CViewport();
+	m_pViewport->SetProjMatrix();
+	m_pViewport->SetViewportMatrix();
+	
 	m_pCubeMesh = new CCubeMesh(4.0f, 4.0f, 4.0f);
-	m_pCubeMesh->MeshColor = RGB(255, 0, 0); // 빨간색으로 설정
+	m_pGameObject = new CGameObject();
+	m_pGameObject->SetMesh(m_pCubeMesh);
 }
 
 void Core::ReleaseObjects() {
@@ -59,17 +66,39 @@ void Core::ReleaseObjects() {
 		m_pCubeMesh = nullptr;
 	}
 
-	if (camera) {
-		delete camera;
-		camera = nullptr;
+	if (m_pCamera) {
+		delete m_pCamera;
+		m_pCamera = nullptr;
+	}
+
+	if (m_pGameObject) {
+		delete m_pGameObject;
+		m_pGameObject = nullptr;
+	}
+
+	if (m_pViewport) {
+		delete m_pViewport;
+		m_pViewport = nullptr;
 	}
 }
 
 void Core::AnimateObjects() {}
 
 void Core::DrawObjects() {
-	if (m_pCubeMesh) {
-		m_pCubeMesh->Draw(m_hDCFrameBuffer, camera);
+	if (m_pCubeMesh && m_pCamera && m_pViewport) {
+		// 1. 카메라(View) 행렬 업데이트 및 파이프라인 설정
+		m_pCamera->SetViewMatrix();
+		m_Pipeline.SetViewMatrix(m_pCamera->GetViewMatrix());
+
+		// 2. 투영(Proj) 및 뷰포트 행렬 설정
+		m_Pipeline.SetProjMatrix(m_pViewport->GetProjMatrix());
+		m_Pipeline.SetViewportMatrix(m_pViewport->GetViewportMatrix());
+
+		// 3. 오브젝트별 월드 행렬 업데이트 및 그리기
+		m_pGameObject->SetWorldMatrix();
+		m_Pipeline.SetWorldMatrix(m_pGameObject->GetWorldMatrix());
+	
+		m_pGameObject->Draw(m_hDCFrameBuffer, m_Pipeline);
 	}
 }
 

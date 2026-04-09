@@ -1,7 +1,6 @@
 #pragma once
-#include "Camera.h"
 
-class CCamera;
+class CPipeLine;
 
 class CVertex {
 public:
@@ -17,14 +16,13 @@ public:
 class CMesh {
 public:
 	CMesh() {}
-	virtual ~CMesh();
+	virtual ~CMesh() {}
 
-	void Draw(HDC hDC, CCamera* camera);
+	void Draw(HDC hDC, CPipeLine& pipeline);
 
-	CVertex* VerticesArray; // 정점 배열
-	DWORD* IndicesArray; // 인덱스 배열
+	std::vector<CVertex> VerticesArray; // 정점 배열
+	std::vector<DWORD> IndicesArray; // 인덱스 배열
 	DWORD IndicesNum; // 인덱스 개수
-	COLORREF MeshColor = RGB(0, 255, 0); // 기본 녹색
 };
 
 class CCubeMesh : public CMesh {

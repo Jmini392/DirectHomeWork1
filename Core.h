@@ -1,6 +1,8 @@
 #pragma once
 #include "Mesh.h"
+#include "GameObject.h"
 #include "Camera.h"
+#include "PipeLine.h"
 
 class Core {
 public:
@@ -33,8 +35,6 @@ public:
 
 	// 화면 초기화
 	void ClearScreen();
-
-	CCamera* camera = nullptr;
 private:
 	// 윈도우 핸들과 인스턴스 핸들
 	HINSTANCE m_hInstance;
@@ -48,8 +48,17 @@ private:
 	HBITMAP m_hBitmapFrameBuffer;
 
 	// 카메라 객체
-	//CCamera* camera = nullptr;
+	CCamera* m_pCamera = nullptr;
+
+	// 게임 오브젝트
+	CGameObject* m_pGameObject = nullptr;
+
+	// 뷰포트 객체
+	CViewport* m_pViewport = nullptr;
 
 	// 메쉬 객체
 	CMesh* m_pCubeMesh = nullptr;
+
+	// 파이프 라인 객체
+	CPipeLine m_Pipeline;
 };
