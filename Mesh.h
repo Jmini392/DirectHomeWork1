@@ -17,11 +17,13 @@ class CFace {
 public:
 	CFace() {}
 	CFace(CVertex v1, CVertex v2, CVertex v3) {
-		Indices[0] = v1; Indices[1] = v2; Indices[2] = v3;
+		Vertex[0] = v1; Vertex[1] = v2; Vertex[2] = v3;
 	}
 	virtual ~CFace() {}
-	
-	CVertex Indices[3];
+
+	// 정점, 법선벡터
+	CVertex Vertex[3];
+	XMFLOAT3 Normal;
 };
 
 class CMesh {

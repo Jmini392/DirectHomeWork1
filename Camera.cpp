@@ -4,6 +4,16 @@ void CCamera::SetCamera() {
 	m_Viewport = new CViewport(); // 뷰포트 정보 초기화
 }
 
+void CCamera::Move(float x, float y, float z) {
+	EYE.x += x; EYE.y += y; EYE.z += z;
+	SetViewMatrix();
+}
+
+void CCamera::Rotate(float x, float y, float z) {
+	Rotation.x += x; Rotation.y += y; Rotation.z += z;
+	SetViewMatrix();
+}
+
 void CCamera::SetViewMatrix() {	
 	// Look을 AT과 EYE의 차이로 설정
 	LOOK = Vector3::Subtract(AT, EYE);

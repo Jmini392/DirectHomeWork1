@@ -12,47 +12,50 @@ void DrawFace(HDC hDC, CVertex v1, CVertex v2, CVertex v3) {
 }
 
 void CMesh::Draw(HDC hDC, CPipeLine& pipeline) {
-	// 모든 면(Face)을 담을 리스트
+	// 리스트 준비
 	std::vector<CFace> faceList;
 
 	for (int i = 0; i < IndicesArray.size(); i += 3) {
-		// 인덱스를 참조하여 삼각형의 세 정점을 가져옴
-		CVertex v1 = VerticesArray[IndicesArray[i]];
-		CVertex v2 = VerticesArray[IndicesArray[i + 1]];
-		CVertex v3 = VerticesArray[IndicesArray[i + 2]];
+		CFace face = CFace(
+			VerticesArray[IndicesArray[i]],
+			VerticesArray[IndicesArray[i + 1]],
+			VerticesArray[IndicesArray[i + 2]]
+		);
 
-		// 파이프라인을 통해 정점 변환
-		v1.v = pipeline.MatrixTransform(v1.v);
-		v2.v = pipeline.MatrixTransform(v2.v);
-		v3.v = pipeline.MatrixTransform(v3.v);
+		// 월드 & 뷰 변환
+		face.Vertex[0].v = pipeline.WorldViewTransform(face.Vertex[0].v);
+		face.Vertex[1].v = pipeline.WorldViewTransform(face.Vertex[1].v);
+		face.Vertex[2].v = pipeline.WorldViewTransform(face.Vertex[2].v);
 
-		// 백페이스 컬링 (Backface Culling)
-		CVertex edge1, edge2;
-		edge1.v = Vector3::Subtract(v2.v, v1.v);
-		edge2.v = Vector3::Subtract(v3.v, v1.v);
+		// 백페이스 컬링
+		XMFLOAT3 edge1 = Vector3::Subtract(face.Vertex[1].v, face.Vertex[0].v);
+		XMFLOAT3 edge2 = Vector3::Subtract(face.Vertex[2].v, face.Vertex[0].v);
+		XMFLOAT3 faceNormal = Vector3::CrossProduct(edge1, edge2);
+		faceNormal = Vector3::Normalize(faceNormal);
+		face.Normal = faceNormal;
 
-		// 2D 외적 (Z축 성분)
-		CVertex crossProduct;
-		crossProduct.v = Vector3::CrossProduct(edge1.v, edge2.v);
-	
-		// 결과가 0 이상이라면 리스트에 넣는다.
-		if (pipeline.CameraDot(crossProduct.v)) {
-			// 변환된 정점들로 Face를 구성하여 리스트에 추가 (앞면인 경우만)
-			faceList.push_back(CFace(v1, v2, v3));
-		}		
+		if (!pipeline.CameraDot(face.Normal, face.Vertex[0].v)) {
+			continue;
+		}
+
+		// 투영 및 뷰포트 변환
+		face.Vertex[0].v = pipeline.ProjViewPortTransform(face.Vertex[0].v);
+		face.Vertex[1].v = pipeline.ProjViewPortTransform(face.Vertex[1].v);
+		face.Vertex[2].v = pipeline.ProjViewPortTransform(face.Vertex[2].v);
+
+		faceList.push_back(face);
 	}
 
-	// 깊이(Z) 기준 내림차순 정렬 (화가 알고리즘)
+	// 모든 면을 깊이 값 기준으로 한 번만 정렬
 	std::sort(faceList.begin(), faceList.end(), [](const CFace& a, const CFace& b) {
-		// 각 면의 세 정점의 Z값 평균으로 깊이를 계산합니다.
-		float avgZ_A = (a.Indices[0].v.z + a.Indices[1].v.z + a.Indices[2].v.z) / 3.f;
-		float avgZ_B = (b.Indices[0].v.z + b.Indices[1].v.z + b.Indices[2].v.z) / 3.f;
-		return avgZ_A > avgZ_B; // 내림차순 정렬
+		float depthA = (a.Vertex[0].v.z + a.Vertex[1].v.z + a.Vertex[2].v.z) / 3.0f;
+		float depthB = (b.Vertex[0].v.z + b.Vertex[1].v.z + b.Vertex[2].v.z) / 3.0f;
+		return depthA > depthB; // 내림차순: 먼 것부터 그리기
 		});
 
-	// 정렬된 순서대로 삼각형 그리기
+	// 그리기
 	for (const auto& face : faceList) {
-		DrawFace(hDC, face.Indices[0], face.Indices[1], face.Indices[2]);
+		DrawFace(hDC, face.Vertex[0], face.Vertex[1], face.Vertex[2]);
 	}
 }
 

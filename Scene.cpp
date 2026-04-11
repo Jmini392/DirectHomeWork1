@@ -35,15 +35,14 @@ void CScene::AnimateObjects() {
 	}
 }
 
-void CScene::DrawObjects(HDC hDC,CCamera& camera) {
+void CScene::DrawObjects(HDC hDC, CCamera& camera) {
 	// 파이프라인 객체생성
 	CPipeLine mpipeline;
 
-	// 카메라 행렬, 투영 및 뷰포트 행렬 설정
+	// 카메라 뷰, 투영 행렬 세팅
 	camera.SetViewMatrix();
 	camera.SetProjMatrix();
 	camera.SetViewportMatrix();
-	mpipeline.SetCameraLookVector(XMFLOAT3(camera.GetViewMatrix()._31, camera.GetViewMatrix()._32, camera.GetViewMatrix()._33));
 	mpipeline.SetViewMatrix(camera.GetViewMatrix());
 	mpipeline.SetProjMatrix(camera.GetProjMatrix());
 	mpipeline.SetViewportMatrix(camera.GetViewportMatrix());
