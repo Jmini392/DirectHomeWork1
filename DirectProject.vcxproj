@@ -130,6 +130,7 @@
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="PCH.h" />
     <ClInclude Include="PipeLine.h" />
+    <ClInclude Include="Player.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="targetver.h" />
@@ -145,6 +146,7 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PCH.h</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="PipeLine.cpp" />
+    <ClCompile Include="Player.cpp" />
     <ClCompile Include="Scene.cpp" />
   </ItemGroup>
   <ItemGroup>

@@ -1,8 +1,8 @@
 #pragma once
-#include "Mesh.h"
-#include "GameObject.h"
+#include "PCH.h"
 #include "Camera.h"
-#include "PipeLine.h"
+#include "Scene.h"
+#include "Player.h"
 
 class Core {
 public:
@@ -27,9 +27,6 @@ public:
 	// 객체 애니메이션
 	void AnimateObjects();
 
-	// 객체 그리기
-	void DrawObjects();
-
 	// 화면 그리기
 	void DrawScreen();
 
@@ -50,15 +47,9 @@ private:
 	// 카메라 객체
 	CCamera* m_pCamera = nullptr;
 
-	// 게임 오브젝트
-	CGameObject* m_pGameObject = nullptr;
+	// 게임 씬 객체
+	CScene* m_pScene = nullptr;
 
-	// 뷰포트 객체
-	CViewport* m_pViewport = nullptr;
-
-	// 메쉬 객체
-	CMesh* m_pCubeMesh = nullptr;
-
-	// 파이프 라인 객체
-	CPipeLine m_Pipeline;
+	// 플레이어 객체
+	CPlayer* m_pPlayer = nullptr;
 };

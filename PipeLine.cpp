@@ -1,4 +1,3 @@
-#include "PCH.h"
 #include "PipeLine.h"
 
 XMFLOAT3 CPipeLine::MatrixTransform(XMFLOAT3& point) {
@@ -8,7 +7,7 @@ XMFLOAT3 CPipeLine::MatrixTransform(XMFLOAT3& point) {
 	XMMATRIX proj = XMLoadFloat4x4(&mProj);
 	XMMATRIX viewport = XMLoadFloat4x4(&mViewport);
 
-	// 전체 행렬 선언
+	// 행렬 곱 계산
 	XMMATRIX total = world * view * proj * viewport;
 	
 	// 받아온 정점과 전체 행렬을 곱하여 변환된 좌표 계산
@@ -24,4 +23,15 @@ XMFLOAT3 CPipeLine::MatrixTransform(XMFLOAT3& point) {
 
 	// 변환된 좌표를 반환
 	return result;
+}
+
+bool CPipeLine::CameraDot(XMFLOAT3& vector) {
+	// 카메라의 시선 방향과 벡터의 내적 계산
+	XMVECTOR camLook = XMLoadFloat3(&vector);
+	XMVECTOR camDir = XMLoadFloat3(&m_CameraLookVector); // 카메라의 시선 방향 벡터 (LOOK)
+
+	float dotProduct = XMVectorGetX(XMVector3Dot(camLook, camDir));
+
+	// 내적이 양수이면 앞면, 음수이면 뒷면
+	return dotProduct > 0;
 }

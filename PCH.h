@@ -15,6 +15,9 @@
 #include <tchar.h>
 
 #include <vector>
+#include <algorithm>
+#include <fstream>
+#include <sstream>
 #include <string>
 #include <wrl.h>
 #include <shellapi.h>

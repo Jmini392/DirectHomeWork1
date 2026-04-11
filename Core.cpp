@@ -1,4 +1,3 @@
-#include "PCH.h"
 #include "Core.h"
 
 Core::Core() {
@@ -38,67 +37,53 @@ void Core::FrameAdvance() {
 
 	ClearScreen();
 	
-	DrawObjects();
+	if (m_pScene && m_pCamera) {
+		m_pScene->DrawObjects(m_hDCFrameBuffer, *m_pCamera);
+	}
 
 	DrawScreen();
 }
 
-void Core::OnProsessing() {}
+void Core::OnProsessing() {
+	static UCHAR pKeyBuffer[256];
+	if (::GetKeyboardState(pKeyBuffer)) {
+		float cxKeyDelta = 0.0f, cyKeyDelta = 0.0f, czKeyDelta = 0.0f;
+		if (pKeyBuffer['W'] & 0xF0) czKeyDelta = +0.125f;
+		if (pKeyBuffer['S'] & 0xF0) czKeyDelta = -0.125f;
+		if (pKeyBuffer['A'] & 0xF0) cxKeyDelta = -0.125f;
+		if (pKeyBuffer['D'] & 0xF0) cxKeyDelta = +0.125f;
+		if (pKeyBuffer[VK_PRIOR] & 0xF0) cyKeyDelta = +0.125f;
+		if (pKeyBuffer[VK_NEXT] & 0xF0) cyKeyDelta = -0.125f;
+		m_pPlayer->Move(cxKeyDelta, cyKeyDelta, czKeyDelta);
+	}
+}
 
 void Core::BuildObjects() {
 	m_pCamera = new CCamera();
-	m_pCamera->SetPosition(0.f, 0.f, -10.f);
-	m_pCamera->SetRotation(0.f, 0.f, 0.f);
-	m_pCamera->SetViewMatrix();
+	m_pCamera->SetCamera();
 
-	m_pViewport = new CViewport();
-	m_pViewport->SetProjMatrix();
-	m_pViewport->SetViewportMatrix();
-	
-	m_pCubeMesh = new CCubeMesh(4.0f, 4.0f, 4.0f);
-	m_pGameObject = new CGameObject();
-	m_pGameObject->SetMesh(m_pCubeMesh);
+	m_pPlayer = new CPlayer();
+	m_pPlayer->SetCamera(m_pCamera);
+	m_pPlayer->SetPosition(0.f, 0.f, -10.f);
+	m_pPlayer->SetRotation(0.f, 0.f, 0.f);
+
+	m_pScene = new CScene();
+	m_pScene->BuildObjects();
 }
 
 void Core::ReleaseObjects() {
-	if (m_pCubeMesh) {
-		delete m_pCubeMesh;
-		m_pCubeMesh = nullptr;
-	}
+	if (m_pPlayer) delete m_pPlayer;
 
-	if (m_pCamera) {
-		delete m_pCamera;
-		m_pCamera = nullptr;
-	}
-
-	if (m_pGameObject) {
-		delete m_pGameObject;
-		m_pGameObject = nullptr;
-	}
-
-	if (m_pViewport) {
-		delete m_pViewport;
-		m_pViewport = nullptr;
-	}
+	if (m_pScene) {
+		m_pScene->ReleaseObjects();
+		delete m_pScene;
+		m_pScene = nullptr;
+	}	
 }
 
-void Core::AnimateObjects() {}
-
-void Core::DrawObjects() {
-	if (m_pCubeMesh && m_pCamera && m_pViewport) {
-		// 1. 카메라(View) 행렬 업데이트 및 파이프라인 설정
-		m_pCamera->SetViewMatrix();
-		m_Pipeline.SetViewMatrix(m_pCamera->GetViewMatrix());
-
-		// 2. 투영(Proj) 및 뷰포트 행렬 설정
-		m_Pipeline.SetProjMatrix(m_pViewport->GetProjMatrix());
-		m_Pipeline.SetViewportMatrix(m_pViewport->GetViewportMatrix());
-
-		// 3. 오브젝트별 월드 행렬 업데이트 및 그리기
-		m_pGameObject->SetWorldMatrix();
-		m_Pipeline.SetWorldMatrix(m_pGameObject->GetWorldMatrix());
-	
-		m_pGameObject->Draw(m_hDCFrameBuffer, m_Pipeline);
+void Core::AnimateObjects() {
+	if (m_pScene) {
+		m_pScene->AnimateObjects();
 	}
 }
 
