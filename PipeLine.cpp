@@ -1,4 +1,5 @@
 #include "PipeLine.h"
+//#include <limits>
 
 XMFLOAT3 CPipeLine::WorldViewTransform(XMFLOAT3& point) {
 	// XMFLOAT4X4를 연산을 위해 XMMATRIX로 로드
@@ -46,4 +47,16 @@ bool CPipeLine::CameraDot(XMFLOAT3& faceNormal, XMFLOAT3& vertexInView) {
 	float dotProduct = Vector3::DotProduct(faceNormal, vertexInView);
 
 	return dotProduct < 0;
+}
+
+void CPipeLine::InitZBuffer(int width, int height) {
+	m_Width = width;
+	m_Height = height;
+	// 1.0f (가장 먼 거리)로 Z버퍼 메모리 할당
+	m_ZBuffer.resize(width * height, 1.0f);
+}
+
+void CPipeLine::ClearZBuffer() {
+	// 매 프레임 그리기 전에 버퍼를 1.0f로 초기화
+	std::fill(m_ZBuffer.begin(), m_ZBuffer.end(), 1.0f);
 }

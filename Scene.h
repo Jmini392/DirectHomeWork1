@@ -12,7 +12,7 @@ public:
 
 	void BuildObjects();
 	void ReleaseObjects();
-	void AnimateObjects();
+	void AnimateObjects(float time);
 	void DrawObjects(HDC hDC, CCamera& camera);
 private:
 	// 게임 객체들 저장 배열

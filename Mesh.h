@@ -31,7 +31,7 @@ public:
 	CMesh() {}
 	virtual ~CMesh() {}
 
-	void Draw(HDC hDC, CPipeLine& pipeline);
+	void Draw(HDC hDC, CPipeLine& pipeline, COLORREF color);
 
 	std::vector<CVertex> VerticesArray; // 정점 배열
 	std::vector<DWORD> IndicesArray; // 인덱스 배열

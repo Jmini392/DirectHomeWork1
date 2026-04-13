@@ -15,6 +15,20 @@ void CCamera::Rotate(float x, float y, float z) {
 }
 
 void CCamera::SetViewMatrix() {	
+	// 카메라의 회전(Rotation) 각도를 라디안으로 변환
+	float pitch = XMConvertToRadians(Rotation.x);
+	float yaw = XMConvertToRadians(Rotation.y);
+
+	// 구면 좌표계 공식을 이용하여 회전된 전방향(Look) 벡터 계산
+	float fLookX = sinf(yaw) * cosf(pitch);
+	float fLookY = sinf(pitch);
+	float fLookZ = cosf(yaw) * cosf(pitch);
+
+	// 산출된 전방향을 현재 위치(EYE)에 더해서 바라보는 목표물(AT) 갱신
+	AT.x = EYE.x + fLookX;
+	AT.y = EYE.y + fLookY;
+	AT.z = EYE.z + fLookZ;
+
 	// Look을 AT과 EYE의 차이로 설정
 	LOOK = Vector3::Subtract(AT, EYE);
 	
@@ -43,10 +57,10 @@ void CCamera::SetProjMatrix() {
 }
 
 void CCamera::SetViewportMatrix() {
-	// 1. ViewportMatrix를 단위 행렬로 초기화
+	// 단위 행렬로 초기화
 	ViewportMatrix = Matrix4x4::Identity();
 
-	// 2. NDC(-1 ~ 1) 좌표를 화면 픽셀 좌표로 변환하는 공식 적용
+	// NDC(-1 ~ 1) 좌표를 화면 픽셀 좌표로 변환하는 공식 적용
 	// X 좌표: [-1, 1] -> [ViewportX, ViewportX + ViewportWidth]
 	ViewportMatrix._11 = m_Viewport->ViewportWidth / 2.0f;
 	ViewportMatrix._41 = m_Viewport->ViewportX + (m_Viewport->ViewportWidth / 2.0f);

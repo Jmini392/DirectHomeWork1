@@ -1,6 +1,6 @@
 #include "Mesh.h"
 
-void DrawFace(HDC hDC, CVertex v1, CVertex v2, CVertex v3) {
+void DrawFace(HDC hDC, CVertex v1, CVertex v2, CVertex v3, COLORREF color) {
 	POINT points[3] = {
 		{ (LONG)v1.v.x, (LONG)v1.v.y },
 		{ (LONG)v2.v.x, (LONG)v2.v.y },
@@ -11,10 +11,76 @@ void DrawFace(HDC hDC, CVertex v1, CVertex v2, CVertex v3) {
 	::Polygon(hDC, points, 3);
 }
 
-void CMesh::Draw(HDC hDC, CPipeLine& pipeline) {
-	// 리스트 준비
-	std::vector<CFace> faceList;
+// --- 새로운 래스터라이저 (Barycentric Coordinates 방식을 덧셈 연산으로 최적화) ---
+void DrawFaceZBuffer(HDC hDC, CVertex v1, CVertex v2, CVertex v3, CPipeLine& pipeline, COLORREF color) {
+	int width = pipeline.GetWidth();
+	int height = pipeline.GetHeight();
+	auto& zBuffer = pipeline.GetZBuffer();
+	DWORD* pixelBuffer = pipeline.GetPixelBuffer(); // 얻어오기!
 
+	// 1. 삼각형을 포함하는 최소한의 사각형(Bounding Box)을 구합니다.
+	int minX = (std::max)(0, (int)(std::min)({ v1.v.x, v2.v.x, v3.v.x }));
+	int maxX = (std::min)(width - 1, (int)(std::max)({ v1.v.x, v2.v.x, v3.v.x }));
+	int minY = (std::max)(0, (int)(std::min)({ v1.v.y, v2.v.y, v3.v.y }));
+	int maxY = (std::min)(height - 1, (int)(std::max)({ v1.v.y, v2.v.y, v3.v.y }));
+
+	// 삼각형의 전체 넓이 계산
+	float area = (v2.v.x - v1.v.x) * (v3.v.y - v1.v.y) - (v3.v.x - v1.v.x) * (v2.v.y - v1.v.y);
+	if (fabs(area) < 0.0001f) return; // 선분 형태의 삼각형은 무시
+	
+	// 나눗셈을 한 번만 수행하기 위해 역수를 구함
+	float invArea = 1.0f / area;
+
+	// [최적화] X, Y 증가에 따른 w0, w1, w2의 변화량(Step 값)을 미리 계산
+	float dw0_dx = (v2.v.y - v3.v.y) * invArea;
+	float dw0_dy = (v3.v.x - v2.v.x) * invArea;
+	float dw1_dx = (v3.v.y - v1.v.y) * invArea;
+	float dw1_dy = (v1.v.x - v3.v.x) * invArea;
+	float dw2_dx = (v1.v.y - v2.v.y) * invArea;
+	float dw2_dy = (v2.v.x - v1.v.x) * invArea;
+
+	// 시작 픽셀에서의 초기 가중치 계산
+	float px_start = (float)minX + 0.5f;
+	float py_start = (float)minY + 0.5f;
+	
+	float w0_row = ((v2.v.x - px_start) * (v3.v.y - py_start) - (v3.v.x - px_start) * (v2.v.y - py_start)) * invArea;
+	float w1_row = ((v3.v.x - px_start) * (v1.v.y - py_start) - (v1.v.x - px_start) * (v3.v.y - py_start)) * invArea;
+	float w2_row = 1.0f - w0_row - w1_row;
+
+	// [최적화] COLORREF 포맷을 여기서 단 한 번만 DWORD 형태로 변환하여 화면에 그릴 색상을 캐싱합니다.
+	DWORD finalColor = 0;
+	if (pixelBuffer != nullptr) {
+		BYTE r = GetRValue(color);
+		BYTE g = GetGValue(color);
+		BYTE b = GetBValue(color);
+		finalColor = (r << 16) | (g << 8) | b;
+	}
+
+	// 2. Bounding Box 순회
+	for (int y = minY; y <= maxY; ++y) {
+		float w0 = w0_row, w1 = w1_row, w2 = w2_row;
+		int rowOffset = y * width; // y축 오프셋을 루프 밖에서 1회 계산
+
+		for (int x = minX; x <= maxX; ++x) {
+			if (w0 >= 0.0f && w1 >= 0.0f && w2 >= 0.0f) {
+				float currentZ = (w0 * v1.v.z) + (w1 * v2.v.z) + (w2 * v3.v.z);
+				int pixelIndex = rowOffset + x;
+
+				if (currentZ < zBuffer[pixelIndex]) {
+					zBuffer[pixelIndex] = currentZ; 
+
+					if (pixelBuffer != nullptr) {
+						pixelBuffer[pixelIndex] = finalColor;
+					}
+				}
+			}
+			w0 += dw0_dx; w1 += dw1_dx; w2 += dw2_dx;
+		}
+		w0_row += dw0_dy; w1_row += dw1_dy; w2_row += dw2_dy;
+	}
+}
+
+void CMesh::Draw(HDC hDC, CPipeLine& pipeline, COLORREF color) {
 	for (int i = 0; i < IndicesArray.size(); i += 3) {
 		CFace face = CFace(
 			VerticesArray[IndicesArray[i]],
@@ -27,35 +93,25 @@ void CMesh::Draw(HDC hDC, CPipeLine& pipeline) {
 		face.Vertex[1].v = pipeline.WorldViewTransform(face.Vertex[1].v);
 		face.Vertex[2].v = pipeline.WorldViewTransform(face.Vertex[2].v);
 
+		// 카메라 Z면 컬링 (Near Plane Culling)
+		// 점 세 개 중 하나라도 카메라의 눈(0.0f 부근) 뒤로 넘어간다면 그리기를 포기
+		if (face.Vertex[0].v.z <= 0.1f || face.Vertex[1].v.z <= 0.1f || face.Vertex[2].v.z <= 0.1f) continue;
+
 		// 백페이스 컬링
 		XMFLOAT3 edge1 = Vector3::Subtract(face.Vertex[1].v, face.Vertex[0].v);
 		XMFLOAT3 edge2 = Vector3::Subtract(face.Vertex[2].v, face.Vertex[0].v);
 		XMFLOAT3 faceNormal = Vector3::CrossProduct(edge1, edge2);
 		faceNormal = Vector3::Normalize(faceNormal);
 		face.Normal = faceNormal;
-
-		if (!pipeline.CameraDot(face.Normal, face.Vertex[0].v)) {
-			continue;
-		}
+		if (!pipeline.CameraDot(face.Normal, face.Vertex[0].v)) continue;
 
 		// 투영 및 뷰포트 변환
 		face.Vertex[0].v = pipeline.ProjViewPortTransform(face.Vertex[0].v);
 		face.Vertex[1].v = pipeline.ProjViewPortTransform(face.Vertex[1].v);
 		face.Vertex[2].v = pipeline.ProjViewPortTransform(face.Vertex[2].v);
 
-		faceList.push_back(face);
-	}
-
-	// 모든 면을 깊이 값 기준으로 한 번만 정렬
-	std::sort(faceList.begin(), faceList.end(), [](const CFace& a, const CFace& b) {
-		float depthA = (a.Vertex[0].v.z + a.Vertex[1].v.z + a.Vertex[2].v.z) / 3.0f;
-		float depthB = (b.Vertex[0].v.z + b.Vertex[1].v.z + b.Vertex[2].v.z) / 3.0f;
-		return depthA > depthB; // 내림차순: 먼 것부터 그리기
-		});
-
-	// 그리기
-	for (const auto& face : faceList) {
-		DrawFace(hDC, face.Vertex[0], face.Vertex[1], face.Vertex[2]);
+		// 그리기
+		DrawFaceZBuffer(hDC, face.Vertex[0], face.Vertex[1], face.Vertex[2], pipeline, color);		
 	}
 }
 

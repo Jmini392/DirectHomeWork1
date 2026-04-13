@@ -3,6 +3,7 @@
 #include "Camera.h"
 #include "Scene.h"
 #include "Player.h"
+#include "Time.h"
 
 class Core {
 public:
@@ -18,7 +19,10 @@ public:
 	void FrameAdvance();
 
 	// 키 입력
-	void OnProsessing();
+	void Input();
+	// 키보드, 마우스 입력
+	void KeyboardProcessing(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
+	void MouseProcessing(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 
 	// 객체 생성과 소멸
 	void BuildObjects();
@@ -43,6 +47,8 @@ private:
 	// 프레임 버퍼
 	HDC m_hDCFrameBuffer;
 	HBITMAP m_hBitmapFrameBuffer;
+	// 컬러 버퍼 화면 픽셀 데이터를 직접 조작하기 위한 1차원 포인터 배열 추가
+	DWORD* m_pPixelBuffer = nullptr; 
 
 	// 카메라 객체
 	CCamera* m_pCamera = nullptr;
@@ -52,4 +58,12 @@ private:
 
 	// 플레이어 객체
 	CPlayer* m_pPlayer = nullptr;
+
+	// 프레임 레이트 문자열 버퍼
+	TCHAR m_pszFrameRate[50] = { 0 };
+	// 게임 타이머 객체
+	CTime m_GameTimer;
+
+	// 이전 프레임의 마우스 커서 위치 저장 변수 추가
+	POINT OldCursorPos;
 };

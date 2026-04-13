@@ -45,7 +45,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     MSG msg;
 
     // 기본 메시지 루프입니다:
-    while (GetMessage(&msg, nullptr, 0, 0))
+    while (1)
     {
         if (::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
             if (msg.message == WM_QUIT) break;
@@ -110,10 +110,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, dwStyle, CW_USEDEFAULT,
        CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top, nullptr, nullptr, hInstance, nullptr);
 
-   if (!hWnd)
-   {
-      return FALSE;
-   }
+   if (!hWnd) return FALSE;
 
    gCore.OnCreate(hInstance, hWnd);
 
@@ -137,6 +134,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
+    case WM_SIZE:
+    case WM_LBUTTONDOWN:
+    case WM_LBUTTONUP:
+    case WM_RBUTTONDOWN:
+    case WM_RBUTTONUP:
+    case WM_MOUSEMOVE:
+		gCore.MouseProcessing(hWnd, message, wParam, lParam);
+    case WM_KEYDOWN:
+    case WM_KEYUP:
+        gCore.KeyboardProcessing(hWnd, message, wParam, lParam);
+        break;
     case WM_DESTROY:
         PostQuitMessage(0);
         break;

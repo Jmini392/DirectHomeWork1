@@ -3,8 +3,6 @@
 #include "PipeLine.h"
 #include "Mesh.h"
 
-class CMesh;
-
 class CGameObject {
 public:
 	CGameObject() {}
@@ -24,7 +22,7 @@ public:
 	XMFLOAT4X4 GetWorldMatrix() { return WorldMatrix; }
 
 	void Draw(HDC hDC, CPipeLine& pipeline);
-	void Animate();
+	void Animate(float time);
 private:
 	CMesh* mesh = nullptr; // 메시 객체
 	COLORREF MeshColor = RGB(255, 0, 0); // 게임 오브젝트의 색상
