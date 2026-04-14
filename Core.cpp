@@ -133,7 +133,7 @@ void Core::BuildObjects() {
 
 	m_pPlayer = new CPlayer();
 	m_pPlayer->SetCamera(m_pCamera);
-	m_pPlayer->SetPosition(0.f, 0.f, -10.f);
+	m_pPlayer->SetPosition(0.f, 0.f, 0.f);
 	m_pPlayer->SetRotation(0.f, 0.f, 0.f);
 
 	m_pScene = new CScene();
@@ -144,6 +144,7 @@ void Core::BuildObjects() {
 }
 
 void Core::ReleaseObjects() {
+	if (m_pCamera) delete m_pCamera;
 	if (m_pPlayer) delete m_pPlayer;
 
 	if (m_pScene) {

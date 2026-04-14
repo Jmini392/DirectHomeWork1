@@ -33,6 +33,8 @@ using namespace DirectX::PackedVector;
 #define FRAME_BUFFER_WIDTH	800
 #define FRAME_BUFFER_HEIGHT	600
 
+#define PI 3.14159265358979323846f
+
 //3차원 벡터의 연산 
 namespace Vector3 {
 	inline XMFLOAT3 XMVectorToFloat3(XMVECTOR& xmvVector) {

@@ -3,52 +3,112 @@
 void CScene::BuildObjects() {
 	// 게임 객체 생성
 	CMesh* pCubeMesh = new CCubeMesh(4.f, 4.f, 4.f);
-	CMesh* pObjMesh = new CObjMesh("Model/Mario.obj");
+	//CMesh* pObjMesh = new CObjMesh("Model/Mario.obj");
 	
 	// 객체도 동적 할당(new)으로 생성
 	CGameObject* pGameObject1 = new CGameObject();
 	pGameObject1->SetMesh(pCubeMesh);
-	pGameObject1->SetPosition(0.f, 0.f, 0.f);
+	pGameObject1->SetPosition(10.f, 0.f, 20.f);
 	pGameObject1->SetRotation(0.f, 0.f, 0.f);
 	pGameObject1->SetColor(RGB(255, 0, 255));
 
 	CGameObject* pGameObject2 = new CGameObject();
-	pGameObject2->SetMesh(pObjMesh);
-	pGameObject2->SetPosition(5.f, 0.f, 0.f);
+	//pGameObject2->SetMesh(pObjMesh);
+	pGameObject2->SetMesh(pCubeMesh);
+	pGameObject2->SetPosition(35.f, 0.f, 10.f);
 	pGameObject2->SetRotation(0.f, 0.f, 0.f);
 	pGameObject2->SetColor(RGB(0, 255, 255));
 
 	m_GameObjects.push_back(pGameObject1);
 	m_GameObjects.push_back(pGameObject2);
+
+	float wallWidth = 30.0f;  // 성벽의 너비
+	float radius = 100.0f;    // 중심으로부터의 거리
+
+	// 원의 둘레(2 * pi * r)를 벽의 너비로 나눕니다.
+	int numWalls = static_cast<int>((2.0f * PI * radius) / (wallWidth - 0.5f));
+
+	CMesh* pWallMesh = new CCubeMesh(2.0f, 50.f, wallWidth);
+
+	for (int i = 0; i < numWalls; ++i) {
+		float angle = (2.0f * PI / numWalls) * i;
+
+		float x = radius * cosf(angle);
+		float z = radius * sinf(angle);
+
+		CWall* pWall = new CWall();
+		pWall->SetMesh(pWallMesh);
+		pWall->SetPosition(x, 0.f, z);
+
+		pWall->SetRotation(0.f, -angle, 0.f);
+
+		//if (i % 2 == 0) pWall->SetColor(RGB(180, 180, 180));
+		//else
+			pWall->SetColor(RGB(150, 150, 150));
+
+		m_GameObjects.push_back(pWall);
+	}
+
+	// 바닥 추가
+	float tileSize = 20.0f; // 타일 한 칸의 크기
+	int gridSize = 20; // 10x10 격자 (총 크기: 200x200)
+
+	CMesh* pFloorMesh = new CCubeMesh(tileSize, 0.5f, tileSize);
+
+	int halfGrid = gridSize / 2;
+	for (int i = -halfGrid; i < halfGrid; ++i) {
+		for (int j = -halfGrid; j < halfGrid; ++j) {
+			CWall* pFloorObj = new CWall();
+			pFloorObj->SetMesh(pFloorMesh);
+
+			// 격자의 중심을 기준으로 타일 배치
+			float posX = (i * tileSize) + (tileSize * 0.5f);
+			float posZ = (j * tileSize) + (tileSize * 0.5f);
+
+			pFloorObj->SetPosition(posX, -30.f, posZ);
+			pFloorObj->SetRotation(0.f, 0.f, 0.f);
+
+			// 타일이 잘 보이도록 체크무늬 형태의 색상 적용 (원치 않으시면 단일 색상으로 통일)
+			if ((i + j) % 2 == 0) pFloorObj->SetColor(RGB(255, 100, 100));
+			else pFloorObj->SetColor(RGB(215, 60, 60));
+
+			m_GameObjects.push_back(pFloorObj);
+		}
+	}
 }
 
 void CScene::ReleaseObjects() {
+	std::vector<CMesh*> deletedMeshes;
+
 	for (auto pObj : m_GameObjects) {
-		delete pObj->GetMesh(); // 메쉬 메모리 해제
-		delete pObj;            // 객체 메모리 해제
+		CMesh* pMesh = pObj->GetMesh();
+
+		// pMesh가 존재하고, deletedMeshes 목록에 없는 경우에만 메모리 해제
+		if (pMesh != nullptr) {
+			auto it = std::find(deletedMeshes.begin(), deletedMeshes.end(), pMesh);
+			if (it == deletedMeshes.end()) {
+				delete pMesh;
+				deletedMeshes.push_back(pMesh); // 해제한 메쉬 목록에 추가
+			}
+		}
+
+		delete pObj; // 객체 메모리 해제
 	}
-	m_GameObjects.clear(); 
+	m_GameObjects.clear();
 }
 
 void CScene::AnimateObjects(float time) {
 	// 벡터(리스트) 순회 중 삭제를 안전하게 하기 위해 iterator(반복자)를 사용합니다.
 	for (auto it = m_GameObjects.begin(); it != m_GameObjects.end(); ) {
 		CGameObject* pObj = *it;
-		pObj->Animate(time); 
+		pObj->Animate(time);
 
 		if (pObj->isdead) {
-			// 1. 동적할당된 메모리 직접 해제 (객체가 가진 메쉬와 자기자신)
-			if (pObj->GetMesh()) {
-				delete pObj->GetMesh();
-			}
 			delete pObj;
-
-			// 2. 리스트(벡터)에서 완전히 삭제하고, 당겨진 다음 요소의 위치를 반환받음
-			it = m_GameObjects.erase(it); 
+			it = m_GameObjects.erase(it);
 		}
 		else {
-			// 3. 지우지 않았을 때만 커서를 다음칸으로 수동 이동
-			++it; 
+			++it;
 		}
 	}
 }

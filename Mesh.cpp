@@ -95,7 +95,7 @@ void CMesh::Draw(HDC hDC, CPipeLine& pipeline, COLORREF color) {
 
 		// 카메라 Z면 컬링 (Near Plane Culling)
 		// 점 세 개 중 하나라도 카메라의 눈(0.0f 부근) 뒤로 넘어간다면 그리기를 포기
-		if (face.Vertex[0].v.z <= 0.1f || face.Vertex[1].v.z <= 0.1f || face.Vertex[2].v.z <= 0.1f) continue;
+		if (face.Vertex[0].v.z <= 0.01f || face.Vertex[1].v.z <= 0.01f || face.Vertex[2].v.z <= 0.01f) continue;
 
 		// 백페이스 컬링
 		XMFLOAT3 edge1 = Vector3::Subtract(face.Vertex[1].v, face.Vertex[0].v);

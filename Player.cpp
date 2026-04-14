@@ -43,14 +43,14 @@ void CPlayer::Fire() {
 	// 총알 객체를 동적으로 생성
 	CBullet* pBullet = new CBullet();
 
-	CMesh* pCubeMesh = new CCubeMesh(1.f, 1.f, 1.f);
+	CMesh* pCubeMesh = new CCubeMesh(0.5f, 0.5f, 0.5f);
 	pBullet->SetMesh(pCubeMesh);
 	pBullet->SetColor(RGB(255, 0, 0));
 
 	// 현재 플레이어의 Position 값을 가져와서 적용
 	XMFLOAT3 pos = GetPosition();
-	pBullet->SetPosition(pos.x, pos.y, pos.z);
-	pBullet->SetStartPosition(pos.x, pos.y, pos.z);
+	pBullet->SetPosition(pos.x, pos.y - 1.f, pos.z);
+	pBullet->SetStartPosition(pos.x, pos.y - 1.f, pos.z);
 
 	// 발사 방향 설정 (카메라 전방 벡터)
 	XMFLOAT4X4 viewMatrix = m_pCamera->GetViewMatrix();

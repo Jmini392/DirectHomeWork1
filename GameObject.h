@@ -36,7 +36,6 @@ private:
 	XMFLOAT3 Rotation = {0.f, 0.f, 0.f}; // 게임 오브젝트의 회전
 };
 
-// CGameObject 클래스 아래에 추가하세요.
 class CBullet : public CGameObject {
 public:
     CBullet() {}
@@ -52,4 +51,13 @@ private:
 	XMFLOAT3 Direction = {0.f, 0.f, 1.f}; // 날아갈 방향
 	float Speed = 1.f; // 날아갈 속도
 	XMFLOAT3 StartPosition = { 0.f, 0.f, 0.f }; // 총알이 발사된 위치
+};
+
+class CWall : public CGameObject {
+public:
+	CWall() {}
+	virtual ~CWall() {}
+	// 벽은 움직이지 않게
+	virtual void Animate(float time) override {}
+private:	
 };

@@ -3,7 +3,7 @@
 #include "GameObject.h"
 #include "Camera.h"
 
-class CScene; // 전방 선언
+class CScene;
 
 class CPlayer : public CGameObject {
 public:
