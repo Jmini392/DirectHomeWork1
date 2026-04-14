@@ -68,11 +68,11 @@ void Core::FrameAdvance() {
 void Core::Input() {
 	static UCHAR pKeyBuffer[256];
 	if (::GetKeyboardState(pKeyBuffer)) {
-		DWORD dir = 5;
-		if (pKeyBuffer['W'] & 0xF0) dir = 0;
-		if (pKeyBuffer['S'] & 0xF0) dir = 1;
-		if (pKeyBuffer['A'] & 0xF0) dir = 2;
-		if (pKeyBuffer['D'] & 0xF0) dir = 3;
+		int dir = 0;
+		if (pKeyBuffer['W'] & 0xF0) dir = 1;
+		if (pKeyBuffer['S'] & 0xF0) dir = -1;
+		if (pKeyBuffer['A'] & 0xF0) dir = -2;
+		if (pKeyBuffer['D'] & 0xF0) dir = 2;
 		m_pPlayer->Move(dir);
 	}
 
@@ -111,6 +111,7 @@ void Core::KeyboardProcessing(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM 
 	case WM_KEYDOWN:
 		switch (wParam) {
 		case VK_SHIFT:
+			m_pPlayer->Fire();
 			break;
 		case VK_ESCAPE:
 			::PostQuitMessage(0);
@@ -137,6 +138,9 @@ void Core::BuildObjects() {
 
 	m_pScene = new CScene();
 	m_pScene->BuildObjects();
+
+	// 플레이어가 총알을 장전/발사(Scene에 추가)할 수 있게 씬 포인터를 넘겨줍니다.
+	m_pPlayer->SetScene(m_pScene); 
 }
 
 void Core::ReleaseObjects() {

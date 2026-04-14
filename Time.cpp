@@ -3,37 +3,38 @@
 CTime::CTime() {
 	FrameRate = 0;
 	FpsCheckTime = 0.0f;
+	m_fDeltaTime = 0.0f;
 	PrevTime = std::chrono::high_resolution_clock::now();
 }
 
 void CTime::Tick(float TargetFrameRate) {
-	// 프레임 고정 - 목표 시간이 될 때까지 대기
-	//if (TargetFrameRate > 0.0f) {
-	//	float targetDelay = 1.0f / TargetFrameRate;
-	//	while (true) {
-	//		CurrentTime = std::chrono::high_resolution_clock::now();
-	//		std::chrono::duration<float> elapsed = CurrentTime - PrevTime;
-	//		if (elapsed.count() >= targetDelay) {
-	//			break; // 목표한 대기 시간이 지났으므로 루프 탈출
-	//		}
-	//	}
-	//}
-	//else
-	CurrentTime = std::chrono::high_resolution_clock::now();
+	// 목표 시간 대기 (Frame Capping)
+	if (TargetFrameRate > 0.0f) {
+		float targetDelay = 1.0f / TargetFrameRate;
+		while (true) {
+			CurrentTime = std::chrono::high_resolution_clock::now();
+			std::chrono::duration<float> elapsed = CurrentTime - PrevTime;
+			if (elapsed.count() >= targetDelay) {
+				break;
+			}
+		}
+	}
+	else CurrentTime = std::chrono::high_resolution_clock::now();
 
-	// 실제 경과 시간 도출 및 이전 시간 갱신
+	// 실제 경과 시간을 계산하고 변수에 저장
 	std::chrono::duration<float> deltaTime = CurrentTime - PrevTime;
+	m_fDeltaTime = deltaTime.count();
 	PrevTime = CurrentTime;
 
-	// 1초 단위 누적 FPS 계산
+	// 1초 단위의 FPS 산출
 	static unsigned long frameCount = 0;
 	frameCount++;
-	FpsCheckTime += deltaTime.count();
+	FpsCheckTime += m_fDeltaTime;
 
 	if (FpsCheckTime >= 1.0f) {
-		FrameRate = frameCount;  // 1초간 누적된 횟수를 최종 FPS로 확정
-		frameCount = 0;          // 카운트 리셋
-		FpsCheckTime -= 1.0f;    // 오차 누적을 막기 위해 1.0씩 감산
+		FrameRate = frameCount;
+		frameCount = 0;
+		FpsCheckTime -= 1.0f;
 	}
 }
 

@@ -1,5 +1,4 @@
 #include "PipeLine.h"
-//#include <limits>
 
 XMFLOAT3 CPipeLine::WorldViewTransform(XMFLOAT3& point) {
 	// XMFLOAT4X4를 연산을 위해 XMMATRIX로 로드

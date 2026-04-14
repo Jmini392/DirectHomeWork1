@@ -21,8 +21,20 @@ void CGameObject::Draw(HDC hDC, CPipeLine& pipeline) {
 
 void CGameObject::Animate(float time) {
 	// 회전 애니메이션
-	Rotation.y += 0.01f; // Y축을 기준으로 회전
-	if (Rotation.y > XM_2PI) {
-		Rotation.y -= XM_2PI; // 360도 이상 회전하면 초기화
-	}
+	Rotation.y += 1.f * time; // Y축을 기준으로 회전
+	if (Rotation.y > XM_2PI) Rotation.y -= XM_2PI; // 360도 이상 회전하면 초기화
+}
+
+void CBullet::Animate(float time) {
+	XMFLOAT3 pos = GetPosition(); 
+	
+	pos.x += Direction.x * Speed * time; 
+	pos.y += Direction.y * Speed * time; 
+	pos.z += Direction.z * Speed * time; 
+
+	SetPosition(pos.x, pos.y, pos.z);
+
+	// 총알이 생기고 일정거리 멀어지면 소멸 처리
+	XMFLOAT3 offset = XMFLOAT3(pos.x - StartPosition.x, pos.y - StartPosition.y, pos.z - StartPosition.z);
+	if (Vector3::Length(offset) > 10.f) isdead = true;
 }

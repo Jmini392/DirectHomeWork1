@@ -8,7 +8,7 @@ public:
 
 	void Tick(float TargetFrameRate);
 
-	float GetDeltatime() { return 1.f / (float)FrameRate; }
+	float GetDeltatime() { return m_fDeltaTime; } 	
 	unsigned long PrintFrameRate(LPTSTR lpszString = NULL, int nCharacters = 0);
 private:
 	// 마지막으로 틱이 기록된 시간
@@ -19,4 +19,6 @@ private:
 	float FpsCheckTime;
 	// 1초당 프레임 수를 저장하는 변수
 	unsigned long FrameRate = 0;
+	// 실제 프레임당 경과 시간을 담을 변수 추가
+	float m_fDeltaTime = 0.0f; 
 };
