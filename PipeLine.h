@@ -6,22 +6,24 @@ public:
 	CPipeLine() {}
 	virtual ~CPipeLine() {}
 
-	// --- 새로 추가되는 Z-Buffer 관련 함수들 ---
-	void InitZBuffer(int width, int height);
-	void ClearZBuffer();
-	std::vector<float>& GetZBuffer() { return m_ZBuffer; }
-	int GetWidth() { return m_Width; }
-	int GetHeight() { return m_Height; }
-
 	void SetWorldMatrix(const XMFLOAT4X4& world) { mWorld = world; }
 	void SetViewMatrix(const XMFLOAT4X4& view) { mView = view; }
 	void SetProjMatrix(const XMFLOAT4X4& proj) { mProj = proj; }
 	void SetViewportMatrix(const XMFLOAT4X4& viewport) { mViewport = viewport; }
-	
-	bool CameraDot(XMFLOAT3& faceNormal, XMFLOAT3& vertexInView);
 
 	XMFLOAT3 WorldViewTransform(XMFLOAT3& point);
 	XMFLOAT3 ProjViewPortTransform(XMFLOAT3& point);
+
+	// --- 새로 추가되는 Z-Buffer 관련 함수들 ---
+	void InitZBuffer(int width, int height) {
+		m_Width = width;
+		m_Height = height;
+		m_ZBuffer.resize(width * height, 1.0f);
+	}
+	void ClearZBuffer() { std::fill(m_ZBuffer.begin(), m_ZBuffer.end(), 1.0f); }
+	std::vector<float>& GetZBuffer() { return m_ZBuffer; }
+	int GetWidth() { return m_Width; }
+	int GetHeight() { return m_Height; }
 
 	void SetPixelBuffer(DWORD* pBuffer) { m_pPixelBuffer = pBuffer; }
 	DWORD* GetPixelBuffer() { return m_pPixelBuffer; }

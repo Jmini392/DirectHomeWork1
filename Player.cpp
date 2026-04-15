@@ -41,9 +41,9 @@ void CPlayer::Fire() {
 	if (!m_pCamera || !m_pScene) return;
 
 	// 총알 객체를 동적으로 생성
-	CBullet* pBullet = new CBullet();
-
-	CMesh* pCubeMesh = new CCubeMesh(0.5f, 0.5f, 0.5f);
+	std::shared_ptr<CMesh> pCubeMesh = std::make_shared<CCubeMesh>(0.5f, 0.5f, 0.5f);
+	
+	std::shared_ptr<CBullet> pBullet = std::make_shared<CBullet>();
 	pBullet->SetMesh(pCubeMesh);
 	pBullet->SetColor(RGB(255, 0, 0));
 

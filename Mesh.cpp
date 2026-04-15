@@ -103,7 +103,7 @@ void CMesh::Draw(HDC hDC, CPipeLine& pipeline, COLORREF color) {
 		XMFLOAT3 faceNormal = Vector3::CrossProduct(edge1, edge2);
 		faceNormal = Vector3::Normalize(faceNormal);
 		face.Normal = faceNormal;
-		if (!pipeline.CameraDot(face.Normal, face.Vertex[0].v)) continue;
+		if (Vector3::DotProduct(face.Normal, face.Vertex[0].v) >= 0) continue;
 
 		// 투영 및 뷰포트 변환
 		face.Vertex[0].v = pipeline.ProjViewPortTransform(face.Vertex[0].v);

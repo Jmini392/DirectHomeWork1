@@ -21,6 +21,7 @@
 #include <sstream>
 #include <string>
 #include <chrono>
+#include <memory>
 
 #include <DirectXMath.h>
 #include <DirectXPackedVector.h>
