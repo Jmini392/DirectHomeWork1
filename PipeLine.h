@@ -1,32 +1,25 @@
 #pragma once
 #include "PCH.h"
+#include "Mesh.h"
 
 class CPipeLine {
 public:
 	CPipeLine() {}
 	virtual ~CPipeLine() {}
 
+	// --- 새로 추가되는 Z-Buffer 관련 함수들 ---
+	void InitZBuffer(int width, int height);
+	void ClearZBuffer();
+
+	void DrawObject(HDC hDC, CMesh* obj, COLORREF color);
+	void DrawFaceZBuffer(HDC hDC, CVertex v1, CVertex v2, CVertex v3, COLORREF color);
+
 	void SetWorldMatrix(const XMFLOAT4X4& world) { mWorld = world; }
 	void SetViewMatrix(const XMFLOAT4X4& view) { mView = view; }
 	void SetProjMatrix(const XMFLOAT4X4& proj) { mProj = proj; }
 	void SetViewportMatrix(const XMFLOAT4X4& viewport) { mViewport = viewport; }
 
-	XMFLOAT3 WorldViewTransform(XMFLOAT3& point);
-	XMFLOAT3 ProjViewPortTransform(XMFLOAT3& point);
-
-	// --- 새로 추가되는 Z-Buffer 관련 함수들 ---
-	void InitZBuffer(int width, int height) {
-		m_Width = width;
-		m_Height = height;
-		m_ZBuffer.resize(width * height, 1.0f);
-	}
-	void ClearZBuffer() { std::fill(m_ZBuffer.begin(), m_ZBuffer.end(), 1.0f); }
-	std::vector<float>& GetZBuffer() { return m_ZBuffer; }
-	int GetWidth() { return m_Width; }
-	int GetHeight() { return m_Height; }
-
 	void SetPixelBuffer(DWORD* pBuffer) { m_pPixelBuffer = pBuffer; }
-	DWORD* GetPixelBuffer() { return m_pPixelBuffer; }
 private:
 	XMFLOAT4X4 mWorld; // 월드 변환 행렬
 	XMFLOAT4X4 mView; // 뷰 변환 행렬

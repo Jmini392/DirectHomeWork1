@@ -106,6 +106,11 @@ void CScene::DrawObjects(HDC hDC, CCamera& camera) {
 	for (auto pObj : m_GameObjects) {		
 		pObj->SetWorldMatrix();
 		mpipeline.SetWorldMatrix(pObj->GetWorldMatrix());
-		pObj->Draw(hDC, mpipeline); 
+		// 게임 오브젝트의 색상과 메시를 가져와서 파이프라인에 전달하여 그립니다.
+		if (pObj->GetMesh()) {
+			COLORREF color = pObj->GetColor();
+			CMesh* mesh = pObj->GetMesh().get();
+			mpipeline.DrawObject(hDC, mesh, color);
+		}
 	}
 }

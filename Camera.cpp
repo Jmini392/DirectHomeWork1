@@ -1,7 +1,7 @@
 #include "Camera.h"
 
 void CCamera::SetCamera() {
-	m_Viewport = new CViewport(); // 뷰포트 정보 초기화
+	m_Viewport = std::make_unique<CViewport>();
 }
 
 void CCamera::Move(float x, float y, float z) {

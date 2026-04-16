@@ -13,16 +13,6 @@ void CGameObject::SetWorldMatrix() {
 	XMStoreFloat4x4(&WorldMatrix, mWorld);
 }
 
-void CGameObject::Draw(HDC hDC, CPipeLine& pipeline) {
-	if (mesh) {
-		mesh->Draw(hDC, pipeline, MeshColor);
-	}
-}
-
-void CGameObject::Animate(float time) {
-	// 기본적으로 아무 동작도 하지 않음
-}
-
 void CRotate::Animate(float time) {
 	// 회전 애니메이션
 	float y;
@@ -37,7 +27,7 @@ void CBullet::Animate(float time) {
 	
 	pos = Vector3::Add(pos, Vector3::ScalarProduct(Direction, Speed * time)); // 방향 벡터를 위치에 더해서 이동
 	
-	SetPosition(pos.x, pos.y, pos.z);
+	CGameObject::SetPosition(pos.x, pos.y, pos.z);
 
 	// 총알이 생기고 일정거리 멀어지면 소멸 처리
 	XMFLOAT3 offset = Vector3::Subtract(pos, StartPosition);

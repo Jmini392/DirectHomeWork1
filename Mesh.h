@@ -1,13 +1,10 @@
 #pragma once
 #include "PCH.h"
-#include "PipeLine.h"
 
 class CVertex {
 public:
 	CVertex() {}
-	CVertex(float x, float y, float z) {
-		v.x = x; v.y = y; v.z = z;
-	}
+	CVertex(float x, float y, float z) { v.x = x; v.y = y; v.z = z; }
 	virtual ~CVertex() {}
 
 	XMFLOAT3 v;
@@ -16,9 +13,7 @@ public:
 class CFace {
 public:
 	CFace() {}
-	CFace(CVertex v1, CVertex v2, CVertex v3) {
-		Vertex[0] = v1; Vertex[1] = v2; Vertex[2] = v3;
-	}
+	CFace(CVertex v1, CVertex v2, CVertex v3) { Vertex[0] = v1; Vertex[1] = v2; Vertex[2] = v3; }
 	virtual ~CFace() {}
 
 	// 정점, 법선벡터
@@ -30,8 +25,6 @@ class CMesh {
 public:
 	CMesh() {}
 	virtual ~CMesh() {}
-
-	void Draw(HDC hDC, CPipeLine& pipeline, COLORREF color);
 
 	std::vector<CVertex> VerticesArray; // 정점 배열
 	std::vector<DWORD> IndicesArray; // 인덱스 배열

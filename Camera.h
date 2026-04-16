@@ -49,5 +49,5 @@ private:
 	XMFLOAT4X4 ProjectionMatrix = Matrix4x4::Identity(); // 원근 투영 행렬
 	XMFLOAT4X4 ViewportMatrix = Matrix4x4::Identity(); // 뷰포트 행렬
 
-	CViewport* m_Viewport = nullptr; // 뷰포트 정보
+	std::unique_ptr<CViewport> m_Viewport = nullptr; // 뷰포트 정보
 };

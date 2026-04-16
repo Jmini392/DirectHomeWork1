@@ -47,12 +47,7 @@ void CPlayer::Fire() {
 	pBullet->SetMesh(pCubeMesh);
 	pBullet->SetColor(RGB(255, 0, 0));
 
-	// 현재 플레이어의 Position 값을 가져와서 적용
-	XMFLOAT3 pos = GetPosition();
-	pBullet->SetPosition(pos.x, pos.y - 1.f, pos.z);
-	pBullet->SetStartPosition(pos.x, pos.y - 1.f, pos.z);
-
-	// 발사 방향 설정 (카메라 전방 벡터)
+	// 1. 발사 방향(Forward)을 먼저 계산합니다.
 	XMFLOAT4X4 viewMatrix = m_pCamera->GetViewMatrix();
 	XMFLOAT3 forward = XMFLOAT3(viewMatrix._13, viewMatrix._23, viewMatrix._33);
 	
@@ -61,7 +56,18 @@ void CPlayer::Fire() {
 	XMStoreFloat3(&forward, vForward);
 
 	pBullet->SetDirection(forward);
-	pBullet->SetSpeed(3.f); 
+	pBullet->SetSpeed(15.f); 
+
+	// 2. 플레이어 위치를 기준으로 총알의 생성 위치를 정합니다. 
+	XMFLOAT3 pos = GetPosition();
+	float spawnOffset = 2.0f; // ★ 플레이어의 중심에서 앞쪽으로 떨어뜨릴 거리 지정
+	
+	// 현재 위치에 전방 벡터 * 일정 거리를 더해서 앞에서 뿅 나오게 만듭니다.
+	pBullet->SetPosition(
+		pos.x + (forward.x * spawnOffset), 
+		pos.y - 1.f,                       // 총구 역할을 위해 살짝 아래쪽에서 발사되도록 유지
+		pos.z + (forward.z * spawnOffset)
+	);
 
 	// 씬에 포인터 등록
 	m_pScene->AddGameObject(pBullet);
