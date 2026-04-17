@@ -7,7 +7,7 @@ public:
 	CVertex(float x, float y, float z) { v.x = x; v.y = y; v.z = z; }
 	virtual ~CVertex() {}
 
-	XMFLOAT3 v;
+	XMFLOAT3 v = { 0.0f, 0.0f, 0.0f };
 };
 
 class CFace {
@@ -18,7 +18,7 @@ public:
 
 	// 정점, 법선벡터
 	CVertex Vertex[3];
-	XMFLOAT3 Normal;
+	XMFLOAT3 Normal = { 0.0f, 0.0f, 0.0f };
 };
 
 class CMesh {

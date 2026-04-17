@@ -1,8 +1,13 @@
 #include "Core.h"
+#include "PlayScene.h"
+#include "TitleScene.h"
 
 Core::Core() {
 	m_hInstance = nullptr;
 	m_hWnd = nullptr;
+	m_hDCFrameBuffer = nullptr;
+	m_hBitmapFrameBuffer = nullptr;
+	OldCursorPos = { 0, 0 };
 }
 
 Core::~Core() {}
@@ -34,7 +39,7 @@ void Core::OnCreate(HINSTANCE hInstance, HWND hWnd) {
 	::SelectObject(m_hDCFrameBuffer, m_hBitmapFrameBuffer);
 	::ReleaseDC(m_hWnd, hDC);
 	::SetBkMode(m_hDCFrameBuffer, TRANSPARENT);
-	
+
 	BuildObjects();
 
 	_tcscpy_s(m_pszFrameRate, _T("FabProject ("));
@@ -55,9 +60,7 @@ void Core::FrameAdvance() {
 
 	ClearScreen();
 	
-	if (m_pScene && m_pCamera) {
-		m_pScene->DrawObjects(m_hDCFrameBuffer, *m_pCamera);
-	}
+	m_SceneManager.Rendering(m_hDCFrameBuffer, *m_Camera);
 
 	DrawScreen();
 
@@ -73,11 +76,11 @@ void Core::Input() {
 		if (pKeyBuffer['S'] & 0xF0) dir = -1;
 		if (pKeyBuffer['A'] & 0xF0) dir = -2;
 		if (pKeyBuffer['D'] & 0xF0) dir = 2;
-		m_pPlayer->Move(dir);
+		m_Player->Move(dir);
 	}
 
 	if (GetCapture() == m_hWnd) {
-		SetCursor(NULL);	// 커서 숨기기
+		//SetCursor(NULL);	// 커서 숨기기
 		POINT CursorPos;
 		GetCursorPos(&CursorPos); // 현재 커서 위치 가져오기
 		float cxMouseDelta = (float)(CursorPos.x - OldCursorPos.x) / 3.0f; // 마우스 이동량을 3으로 나누어 회전 속도 조절
@@ -85,7 +88,7 @@ void Core::Input() {
 		SetCursorPos(OldCursorPos.x, OldCursorPos.y); // 커서를 이전 위치로 되돌리기
 		
 		if (cxMouseDelta || cyMouseDelta) {
-			m_pPlayer->Rotate(0.0f, cxMouseDelta, 0.0f); // 마우스의 X 이동량을 플레이어의 Y축 회전에 적용
+			m_Player->Rotate(0.0f, cxMouseDelta, 0.0f); // 마우스의 X 이동량을 플레이어의 Y축 회전에 적용
 		}
 	}
 }
@@ -111,7 +114,7 @@ void Core::KeyboardProcessing(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM 
 	case WM_KEYDOWN:
 		switch (wParam) {
 		case VK_SHIFT:
-			m_pPlayer->Fire();
+			if (auto bullet = m_Player->Fire()) m_SceneManager.AddObject(bullet);
 			break;
 		case VK_ESCAPE:
 			::PostQuitMessage(0);
@@ -128,37 +131,22 @@ void Core::KeyboardProcessing(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM 
 }
 
 void Core::BuildObjects() {
-	m_pCamera = new CCamera();
-	m_pCamera->SetCamera();
+	m_Camera = std::make_unique<CCamera>();
+	m_Camera->SetCamera();
 
-	m_pPlayer = new CPlayer();
-	m_pPlayer->SetCamera(m_pCamera);
-	m_pPlayer->SetPosition(0.f, 0.f, 0.f);
-	m_pPlayer->SetRotation(0.f, 0.f, 0.f);
+	m_Player = std::make_unique<CPlayer>();
+	m_Player->SetCamera(m_Camera.get());
+	m_Player->SetPosition(0.f, 0.f, 0.f);
+	m_Player->SetRotation(0.f, 0.f, 0.f);
 
-	m_pScene = new CScene();
-	m_pScene->BuildObjects();
-
-	// 플레이어가 총알을 장전/발사(Scene에 추가)할 수 있게 씬 포인터를 넘겨줍니다.
-	m_pPlayer->SetScene(m_pScene); 
+	m_SceneManager.Init();
 }
 
-void Core::ReleaseObjects() {
-	if (m_pCamera) delete m_pCamera;
-	if (m_pPlayer) delete m_pPlayer;
-
-	if (m_pScene) {
-		m_pScene->ReleaseObjects();
-		delete m_pScene;
-		m_pScene = nullptr;
-	}	
-}
+void Core::ReleaseObjects() {}
 
 void Core::AnimateObjects() {
 	float deltatime = m_GameTimer.GetDeltatime();
-	if (m_pScene) {
-		m_pScene->AnimateObjects(deltatime);
-	}
+	m_SceneManager.Animation(deltatime);
 }
 
 void Core::DrawScreen() {

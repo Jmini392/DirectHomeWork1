@@ -37,13 +37,13 @@ public:
 	XMFLOAT4X4 GetProjMatrix() { return ProjectionMatrix; }
 	XMFLOAT4X4 GetViewportMatrix() { return ViewportMatrix; }
 private:
-	XMFLOAT3 EYE; // 카메라의 위치
-	XMFLOAT3 Rotation; // 카메라의 회전
+	XMFLOAT3 EYE = { 0.f, 0.f, 0.f }; // 카메라의 위치
+	XMFLOAT3 Rotation = { 0.f, 0.f, 0.f }; // 카메라의 회전
 
 	XMFLOAT3 AT = {0.f, 0.f, 0.f}; // 카메라의 시선 방향 위치 벡터
 	XMFLOAT3 UP = { 0.f, 1.f, 0.f }; // 카메라의 상향 벡터
-	XMFLOAT3 LOOK; // 카메라의 시선 방향 벡터	
-	XMFLOAT3 RIGHT; // 카메라의 오른쪽 방향 벡터
+	XMFLOAT3 LOOK = { 0.f, 0.f, 1.f }; // 카메라의 시선 방향 벡터	
+	XMFLOAT3 RIGHT = { 1.f, 0.f, 0.f }; // 카메라의 오른쪽 방향 벡터
 	
 	XMFLOAT4X4 ViewMatrix = Matrix4x4::Identity(); // 카메라 행렬
 	XMFLOAT4X4 ProjectionMatrix = Matrix4x4::Identity(); // 원근 투영 행렬

@@ -51,13 +51,14 @@ private:
 	DWORD* m_pPixelBuffer = nullptr; 
 
 	// 카메라 객체
-	CCamera* m_pCamera = nullptr;
+	std::unique_ptr<CCamera> m_Camera;
 
 	// 게임 씬 객체
-	CScene* m_pScene = nullptr;
+	CSceneManager m_SceneManager;
+	//std::unique_ptr<CScene> m_Scene;
 
 	// 플레이어 객체
-	CPlayer* m_pPlayer = nullptr;
+	std::unique_ptr<CPlayer> m_Player;
 
 	// 프레임 레이트 문자열 버퍼
 	TCHAR m_pszFrameRate[50] = { 0 };
