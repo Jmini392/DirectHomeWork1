@@ -33,12 +33,26 @@ private:
 	XMFLOAT4X4 WorldMatrix = Matrix4x4::Identity(); // 월드 행렬
 };
 
-class CRotate : public CGameObject {
+class CWall : public CGameObject {
 public:
-	CRotate() {}
-	virtual ~CRotate() {}
+	CWall();
+	virtual ~CWall() {}
+};
+
+class CFloor : public CGameObject {
+public:
+	CFloor();
+	virtual ~CFloor() {}
+};
+
+class CItem : public CGameObject {
+public:
+	CItem();
+	virtual ~CItem() {}
 
 	virtual void Animate(float time);
+
+	float randomValue;
 };
 
 class CBullet : public CGameObject {

@@ -2,7 +2,6 @@
 #include "Scene.h"
 
 void CPlayer::SetPosition(float x, float y, float z) {
-	position = XMFLOAT3(x, y, z);
 	CGameObject::SetPosition(x, y, z);
 	if (m_pCamera) m_pCamera->SetPosition(x, y, z);
 }
@@ -37,7 +36,7 @@ void CPlayer::Rotate(float x, float y, float z) {
 
 std::shared_ptr<CGameObject> CPlayer::Fire() {
 	// 총알 객체를 동적으로 생성
-	std::shared_ptr<CMesh> pSphereMesh = std::make_shared<CObjMesh>("Model/Sphere.obj");
+	std::shared_ptr<CMesh> pSphereMesh = std::make_shared<CObjMesh>("Sphere.obj");
 	
 	std::shared_ptr<CBullet> pBullet = std::make_shared<CBullet>();
 	pBullet->SetMesh(pSphereMesh);

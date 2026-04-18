@@ -141,6 +141,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_RBUTTONUP:
     case WM_MOUSEMOVE:
 		gCore.MouseProcessing(hWnd, message, wParam, lParam);
+        break;
     case WM_KEYDOWN:
     case WM_KEYUP:
         gCore.KeyboardProcessing(hWnd, message, wParam, lParam);

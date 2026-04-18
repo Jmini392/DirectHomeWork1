@@ -21,6 +21,5 @@ public:
 private:
 	CCamera* m_pCamera = nullptr; // 플레이어의 카메라
 	XMFLOAT3 direction = { 0.0f, 0.0f, 1.0f }; // 플레이어가 바라보는 방향
-	XMFLOAT3 position = { 0.0f, 0.0f, 0.0f }; // 플레이어의 위치
 	float MoveSpeed = 0.1f; // 이동 속도
 };

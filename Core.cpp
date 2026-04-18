@@ -1,13 +1,10 @@
 #include "Core.h"
-#include "PlayScene.h"
-#include "TitleScene.h"
 
 Core::Core() {
 	m_hInstance = nullptr;
 	m_hWnd = nullptr;
 	m_hDCFrameBuffer = nullptr;
 	m_hBitmapFrameBuffer = nullptr;
-	OldCursorPos = { 0, 0 };
 }
 
 Core::~Core() {}
@@ -59,8 +56,8 @@ void Core::FrameAdvance() {
 	AnimateObjects();
 
 	ClearScreen();
-	
-	m_SceneManager.Rendering(m_hDCFrameBuffer, *m_Camera);
+
+	m_SceneManager.Rendering(m_hDCFrameBuffer);
 
 	DrawScreen();
 
@@ -69,76 +66,18 @@ void Core::FrameAdvance() {
 }
 
 void Core::Input() {
-	static UCHAR pKeyBuffer[256];
-	if (::GetKeyboardState(pKeyBuffer)) {
-		int dir = 0;
-		if (pKeyBuffer['W'] & 0xF0) dir = 1;
-		if (pKeyBuffer['S'] & 0xF0) dir = -1;
-		if (pKeyBuffer['A'] & 0xF0) dir = -2;
-		if (pKeyBuffer['D'] & 0xF0) dir = 2;
-		m_Player->Move(dir);
-	}
-
-	if (GetCapture() == m_hWnd) {
-		//SetCursor(NULL);	// 커서 숨기기
-		POINT CursorPos;
-		GetCursorPos(&CursorPos); // 현재 커서 위치 가져오기
-		float cxMouseDelta = (float)(CursorPos.x - OldCursorPos.x) / 3.0f; // 마우스 이동량을 3으로 나누어 회전 속도 조절
-		float cyMouseDelta = (float)(CursorPos.y - OldCursorPos.y) / 3.0f;
-		SetCursorPos(OldCursorPos.x, OldCursorPos.y); // 커서를 이전 위치로 되돌리기
-		
-		if (cxMouseDelta || cyMouseDelta) {
-			m_Player->Rotate(0.0f, cxMouseDelta, 0.0f); // 마우스의 X 이동량을 플레이어의 Y축 회전에 적용
-		}
-	}
+	m_SceneManager.Input();
 }
 
 void Core::MouseProcessing(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam) {
-	switch (nMessageID) {
-	case WM_LBUTTONDOWN:
-		::SetCapture(hWnd);
-		::GetCursorPos(&OldCursorPos);
-		break;
-	case WM_LBUTTONUP:
-		::ReleaseCapture();
-		break;
-	case WM_MOUSEMOVE:
-		break;
-	default:
-		break;
-	}
+	m_SceneManager.MouseProcessing(hWnd, nMessageID, wParam, lParam);
 }
 
 void Core::KeyboardProcessing(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam) {
-	switch (nMessageID) {
-	case WM_KEYDOWN:
-		switch (wParam) {
-		case VK_SHIFT:
-			if (auto bullet = m_Player->Fire()) m_SceneManager.AddObject(bullet);
-			break;
-		case VK_ESCAPE:
-			::PostQuitMessage(0);
-			break;
-		case VK_RETURN:
-			break;
-		default:
-			break;
-		}
-		break;
-	default:
-		break;
-	}
+	m_SceneManager.KeyboardProcessing(hWnd, nMessageID, wParam, lParam);
 }
 
 void Core::BuildObjects() {
-	m_Camera = std::make_unique<CCamera>();
-	m_Camera->SetCamera();
-
-	m_Player = std::make_unique<CPlayer>();
-	m_Player->SetCamera(m_Camera.get());
-	m_Player->SetPosition(0.f, 0.f, 0.f);
-	m_Player->SetRotation(0.f, 0.f, 0.f);
-
 	m_SceneManager.Init();
 }
 

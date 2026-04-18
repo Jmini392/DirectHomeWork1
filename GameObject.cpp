@@ -13,7 +13,32 @@ void CGameObject::SetWorldMatrix() {
 	XMStoreFloat4x4(&WorldMatrix, mWorld);
 }
 
-void CRotate::Animate(float time) {
+CWall::CWall() {
+	// 메시 크기 객체 고정
+	std::shared_ptr<CMesh> pWallMesh = std::make_shared<CCubeMesh>(2.0f, 50.f, 45.f);
+	// 벽 객체 초기화
+	SetMesh(pWallMesh);
+}
+
+CFloor::CFloor() {
+	// 메시 크기 객체 고정
+	std::shared_ptr<CMesh> pFloorMesh = std::make_shared<CCubeMesh>(20.f, 1.f, 20.f);
+	// 바닥 객체 초기화
+	SetMesh(pFloorMesh);
+}
+
+CItem::CItem() {
+	randomValue = RANDOM;
+	// 메시 크기 객체 고정
+	std::shared_ptr<CMesh> pItemMesh = std::make_shared<CCubeMesh>(1.5f, 1.5f, 1.5f);
+	// 아이템 객체 초기화
+	SetMesh(pItemMesh);
+	if (randomValue == 0) SetColor(RGB(255, 0, 255));
+	else SetColor(RGB(0, 255, 255));
+	// 위치는 맵안에서 랜덤하게 생성
+}
+
+void CItem::Animate(float time) {
 	// 회전 애니메이션
 	float y;
 	y = GetRotation().y;

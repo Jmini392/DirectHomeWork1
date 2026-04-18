@@ -1,7 +1,15 @@
 #pragma once
 #include "PCH.h"
-#include "Camera.h"
-#include "Time.h"
+#include "TitleScene.h"
+#include "LobbyScene.h"
+#include "PlayScene.h"
+
+enum class SceneType {
+	NONE,
+	TITLE,
+	LOBBY,
+	PLAY,
+};
 
 // 기본 씬 인터페이스 (추상 클래스)
 class CScene {
@@ -12,12 +20,16 @@ public:
 	virtual void Enter() {}
 	virtual void Exit() {}
 
+	virtual void Input() {}
+	virtual void KeyboardProcessing(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam) {}
+	virtual void MouseProcessing(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam) {}
+
 	virtual void BuildObjects() {}
 	virtual void AnimateObjects(float time) {}
-	virtual void DrawObjects(HDC hDC, CCamera& camera) {}
+	virtual void DrawObjects(HDC hDC) {}
 	virtual void AddGameObject(std::shared_ptr<class CGameObject> pObj) {}
 
-	virtual std::unique_ptr<CScene> GetNextScene() { return nullptr; }
+	virtual SceneType GetNextScene() { return SceneType::NONE; }
 };
 
 // 씬 매니저 일반 클래스 (Core가 소유하게 됨)
@@ -33,9 +45,15 @@ public:
 	// 현재 씬 업데이트
 	void Animation(float time);
 	// 현재 씬 렌더링
-	void Rendering(HDC hDC, CCamera& camera);
+	void Rendering(HDC hDC);
 	// 현재 씬에 객체를 추가하는 함수
 	void AddObject(std::shared_ptr<class CGameObject> pObj);
+	// 씬 입력처리
+	void Input();
+	// 씬 키보드 입력처리
+	void KeyboardProcessing(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
+	// 씬 마우스 입력처리
+	void MouseProcessing(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 private:
 	std::unique_ptr<CScene> CurrentScene;
 };

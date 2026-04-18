@@ -22,6 +22,8 @@
 #include <string>
 #include <chrono>
 #include <memory>
+#include <random>
+#include <map>
 
 #include <DirectXMath.h>
 #include <DirectXPackedVector.h>
@@ -35,6 +37,14 @@ using namespace DirectX::PackedVector;
 #define FRAME_BUFFER_HEIGHT	600
 
 #define PI 3.14159265358979323846f
+
+inline int Random() {
+	std::default_random_engine dre;
+	std::uniform_int_distribution<int> uid(0, 1);
+	return uid(dre);
+}
+
+#define RANDOM Random()
 
 //3차원 벡터의 연산 
 namespace Vector3 {
@@ -217,12 +227,3 @@ namespace Matrix4x4 {
 		return(xmmtx4x4Result);
 	}
 }
-
-//정점의 색상을 무작위로(Random) 설정하기 위해 사용한다. 각 정점의 색상은 난수(Random Number)를 생성하여 지정한다.
-#define RANDOM_COLOR XMFLOAT4(rand() / float(RAND_MAX), rand() / float(RAND_MAX), rand() / float(RAND_MAX), rand() / float(RAND_MAX))
-
-#define MAX_LIGHTS 8
-#define MAX_MATERIALS 8
-#define POINT_LIGHT 1
-#define SPOT_LIGHT 2
-#define DIRECTIONAL_LIGHT 3

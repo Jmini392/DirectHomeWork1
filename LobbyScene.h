@@ -2,10 +2,10 @@
 #include "PCH.h"
 #include "Scene.h"
 
-class CTitleScene : public CScene {
+class CLobbyScene : public CScene {
 public:
-	CTitleScene() {}
-	virtual ~CTitleScene();
+	CLobbyScene() {}
+	virtual ~CLobbyScene() {}
 
 	void Enter();
 	void Exit();
