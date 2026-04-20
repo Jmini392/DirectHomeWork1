@@ -19,6 +19,7 @@ public:
 
 	virtual void OnCollision(std::shared_ptr<CGameObject> pOther) override;
 	std::shared_ptr<CGameObject> Fire();
+	int GetBulletCount() const { return bulletCount; }
 private:
 	CCamera* m_pCamera = nullptr; // 플레이어의 카메라
 	XMFLOAT3 direction = { 0.0f, 0.0f, 1.0f }; // 플레이어가 바라보는 방향

@@ -52,6 +52,12 @@ public:
 	virtual ~CCubeMesh() {}
 };
 
+class CPlaneMesh : public CMesh {
+public:
+	CPlaneMesh(float w = 4.f, float h = 4.f);
+	virtual ~CPlaneMesh() {}
+};
+
 class CObjMesh : public CMesh {
 public:
 	CObjMesh(const std::string& filename);

@@ -16,7 +16,7 @@ void CGameObject::SetWorldMatrix() {
 CWall::CWall() {
 	SetType(ObjectType::WALL);
 	// 메시 크기 객체 고정
-	std::shared_ptr<CMesh> pWallMesh = std::make_shared<CCubeMesh>(2.0f, 100.f, 140.f);
+	std::shared_ptr<CMesh> pWallMesh = std::make_shared<CCubeMesh>(2.f, 100.f, 140.f);
 	// 벽 객체 초기화
 	SetMesh(pWallMesh);
 }
@@ -24,7 +24,7 @@ CWall::CWall() {
 CFloor::CFloor() {
 	SetType(ObjectType::FLOOR);
 	// 메시 크기 객체 고정
-	std::shared_ptr<CMesh> pFloorMesh = std::make_shared<CCubeMesh>(20.f, 1.f, 20.f);
+	std::shared_ptr<CMesh> pFloorMesh = std::make_shared<CPlaneMesh>(20.f, 20.f);
 	// 바닥 객체 초기화
 	SetMesh(pFloorMesh);
 }

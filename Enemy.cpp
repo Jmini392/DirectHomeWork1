@@ -6,20 +6,20 @@ CEnemy::CEnemy(int num) {
 	// 메시 크기 객체 고정
 	if (num == 0) {
 		pEnemyMesh = std::make_shared<CCubeMesh>(4.f, 4.f, 4.f);
-		SetColor(RGB(255, 0, 0));
-		m_Speed = 7.0f;
+		SetColor(RGB(0, 0, 255));
+		m_Speed = 17.0f;
 		health = 1;
 	}
 	else if (num == 1) {
 		pEnemyMesh = std::make_shared<CCubeMesh>(5.f, 5.f, 5.f);
-		SetColor(RGB(0, 255, 0));
-		m_Speed = 5.0f;
+		SetColor(RGB(255, 0, 0));
+		m_Speed = 15.0f;
 		health = 2;
 	}
 	else if (num == 2) {
 		pEnemyMesh = std::make_shared<CCubeMesh>(6.f, 6.f, 6.f);
-		SetColor(RGB(0, 0, 255));
-		m_Speed = 3.0f;
+		SetColor(RGB(0, 255, 0));
+		m_Speed = 13.0f;
 		health = 3;
 	}
 	// 적 객체 초기화
@@ -60,6 +60,22 @@ void CEnemy::Animate(float time) {
 void CEnemy::OnCollision(std::shared_ptr<CGameObject> pOther) {
 	// 총알과 충돌 시 소멸 처리
 	if (pOther->GetType() == ObjectType::BULLET) {
-		if (--health <= 0) isdead = true;
+		health--;
+		if (health <= 0) {
+			isdead = true;
+		}
+		else {
+			// 남은 체력에 따라 모양(크기), 색상, 스피드 변경 적용
+			if (health == 2) {
+				SetMesh(std::make_shared<CCubeMesh>(5.f, 5.f, 5.f));
+				SetColor(RGB(255, 0, 0));
+				m_Speed = 15.0f;
+			}
+			else if (health == 1) {
+				SetMesh(std::make_shared<CCubeMesh>(4.f, 4.f, 4.f));
+				SetColor(RGB(0, 0, 255));
+				m_Speed = 17.0f;
+			}
+		}
 	}
 }

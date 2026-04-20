@@ -4,10 +4,8 @@
 #include "PlayScene.h"
 
 void CSceneManager::Init() {
-	/*std::unique_ptr<CTitleScene> pTitleScene = std::make_unique<CTitleScene>();
-	ChangeScene(std::move(pTitleScene));*/
-	std::unique_ptr<CPlayScene> pPlayScene = std::make_unique<CPlayScene>();
-	ChangeScene(std::move(pPlayScene));
+	std::unique_ptr<CTitleScene> pTitleScene = std::make_unique<CTitleScene>();
+	ChangeScene(std::move(pTitleScene));
 }
 
 void CSceneManager::ChangeScene(std::unique_ptr<CScene> newScene) {

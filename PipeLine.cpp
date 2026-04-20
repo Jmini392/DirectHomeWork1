@@ -88,52 +88,98 @@ void CPipeLine::DrawObject(HDC hDC, CMesh* obj, COLORREF color) {
 			obj->VerticesArray[obj->IndicesArray[i + 1]],
 			obj->VerticesArray[obj->IndicesArray[i + 2]]
 		);
-		XMVECTOR v1 = XMLoadFloat3(&face.Vertex[0].v);
-		XMVECTOR v2 = XMLoadFloat3(&face.Vertex[1].v);
-		XMVECTOR v3 = XMLoadFloat3(&face.Vertex[2].v);
+		XMVECTOR v[3] = {
+			XMLoadFloat3(&face.Vertex[0].v),
+			XMLoadFloat3(&face.Vertex[1].v),
+			XMLoadFloat3(&face.Vertex[2].v)
+		};
 
 		// 월드 & 뷰 변환
-		v1 = XMVector3TransformCoord(v1, worldview);
-		v2 = XMVector3TransformCoord(v2, worldview);
-		v3 = XMVector3TransformCoord(v3, worldview);
+		v[0] = XMVector3TransformCoord(v[0], worldview);
+		v[1] = XMVector3TransformCoord(v[1], worldview);
+		v[2] = XMVector3TransformCoord(v[2], worldview);
 
-		// 카메라 Z면 컬링 (Near Plane Culling)
-		// 점 세 개 중 하나라도 카메라의 눈(0.0f 부근) 뒤로 넘어간다면 그리기를 포기
-		if (XMVectorGetZ(v1) <= 0.01f || XMVectorGetZ(v2) <= 0.01f || XMVectorGetZ(v3) <= 0.01f) continue;
+		// Near Plane Clipping (Sutherland-Hodgman 방식 기반)
+		// 잘려진 다각형의 정점을 담을 임시 버퍼
+		XMVECTOR clippedPoly[4];
+		int polyCount = 0;
+		float near_z;
+		near_z = -mProj._43 / mProj._33;
 
-		// 백페이스 컬링
-		XMVECTOR edge1 = v2 - v1;
-		XMVECTOR edge2 = v3 - v1;
-		XMVECTOR faceNormalVec = XMVector3Cross(edge1, edge2);
-		faceNormalVec = XMVector3Normalize(faceNormalVec);
-		XMStoreFloat3(&face.Normal, faceNormalVec);
-		if (XMVectorGetX(XMVector3Dot(faceNormalVec, v1)) >= 0) continue;
-		
-		// 투영 변환
-		XMMATRIX Proj = XMLoadFloat4x4(&mProj);
-		v1 = XMVector3TransformCoord(v1, Proj);
-		v2 = XMVector3TransformCoord(v2, Proj);
-		v3 = XMVector3TransformCoord(v3, Proj);
+		for (int j = 0; j < 3; j++) {
+			int next = (j + 1) % 3;
+			float d1 = XMVectorGetZ(v[j]) - near_z;
+			float d2 = XMVectorGetZ(v[next]) - near_z;
 
-		// 원근 나누기
-		float w0 = XMVectorGetW(v1);
-		float w1 = XMVectorGetW(v2);
-		float w2 = XMVectorGetW(v3);
-		if (fabs(w0) > 0.000000001f) v1 = XMVectorDivide(v1, XMVectorSplatW(v1));
-		if (fabs(w1) > 0.000000001f) v2 = XMVectorDivide(v2, XMVectorSplatW(v2));
-		if (fabs(w2) > 0.000000001f) v3 = XMVectorDivide(v3, XMVectorSplatW(v3));
-		
-		// 뷰포트 변환
-		XMMATRIX viewport = XMLoadFloat4x4(&mViewport);
-		v1 = XMVector3TransformCoord(v1, viewport);
-		v2 = XMVector3TransformCoord(v2, viewport);
-		v3 = XMVector3TransformCoord(v3, viewport);
+			// 현재 정점이 Near Plane 앞(카메라 쪽)에 있으면 추가
+			if (d1 >= 0.0f) clippedPoly[polyCount++] = v[j];
 
-		XMStoreFloat3(&face.Vertex[0].v, v1);
-		XMStoreFloat3(&face.Vertex[1].v, v2);
-		XMStoreFloat3(&face.Vertex[2].v, v3);
+			// 선분이 Near Plane을 교차하면 교차점(Intersection) 계산 후 추가
+			if ((d1 >= 0.0f && d2 < 0.0f) || (d1 < 0.0f && d2 >= 0.0f)) {
+				float t = d1 / (d1 - d2); // 교차점까지의 비율
+				clippedPoly[polyCount++] = XMVectorLerp(v[j], v[next], t);
+			}
+		}
 
-		// 그리기
-		DrawFaceZBuffer(hDC, face.Vertex[0], face.Vertex[1], face.Vertex[2], color);
+		// 정점이 3개 미만이면 완전히 카메라 뒤로 넘어간 것이므로 그리지 않음
+		if (polyCount < 3) continue;
+
+		// 다각형(삼각형 또는 사각형)을 다시 삼각형으로 분할(Triangulation)
+		int triangleCount = (polyCount == 3) ? 1 : 2;
+		XMVECTOR outTriangles[2][3];
+
+		outTriangles[0][0] = clippedPoly[0];
+		outTriangles[0][1] = clippedPoly[1];
+		outTriangles[0][2] = clippedPoly[2];
+
+		if (triangleCount == 2) {
+			outTriangles[1][0] = clippedPoly[0];
+			outTriangles[1][1] = clippedPoly[2];
+			outTriangles[1][2] = clippedPoly[3];
+		}
+
+		// 클리핑되어 생성된 1개 또는 2개의 삼각형을 각각 처리
+		for (int tIdx = 0; tIdx < triangleCount; ++tIdx) {
+			XMVECTOR tv1 = outTriangles[tIdx][0];
+			XMVECTOR tv2 = outTriangles[tIdx][1];
+			XMVECTOR tv3 = outTriangles[tIdx][2];
+
+			// 백페이스 컬링
+			XMVECTOR edge1 = tv2 - tv1;
+			XMVECTOR edge2 = tv3 - tv1;
+			XMVECTOR faceNormalVec = XMVector3Cross(edge1, edge2);
+			faceNormalVec = XMVector3Normalize(faceNormalVec);
+
+			// 카메라 위치가 (0,0,0)인 뷰 스페이스 기준이므로 내적 검사
+			if (XMVectorGetX(XMVector3Dot(faceNormalVec, tv1)) >= 0) continue;
+
+			// 투영 변환
+			XMMATRIX Proj = XMLoadFloat4x4(&mProj);
+			tv1 = XMVector3Transform(tv1, Proj);
+			tv2 = XMVector3Transform(tv2, Proj);
+			tv3 = XMVector3Transform(tv3, Proj);
+
+			// 원근 나누기
+			float w0 = XMVectorGetW(tv1);
+			float w1 = XMVectorGetW(tv2);
+			float w2 = XMVectorGetW(tv3);
+			if (fabs(w0) > 0.000000001f) tv1 = XMVectorDivide(tv1, XMVectorSplatW(tv1));
+			if (fabs(w1) > 0.000000001f) tv2 = XMVectorDivide(tv2, XMVectorSplatW(tv2));
+			if (fabs(w2) > 0.000000001f) tv3 = XMVectorDivide(tv3, XMVectorSplatW(tv3));
+
+			// 뷰포트 변환
+			XMMATRIX viewport = XMLoadFloat4x4(&mViewport);
+			tv1 = XMVector3TransformCoord(tv1, viewport);
+			tv2 = XMVector3TransformCoord(tv2, viewport);
+			tv3 = XMVector3TransformCoord(tv3, viewport);
+
+			CVertex cv1, cv2, cv3;
+			XMStoreFloat3(&cv1.v, tv1);
+			XMStoreFloat3(&cv2.v, tv2);
+			XMStoreFloat3(&cv3.v, tv3);
+
+			// 그리기
+			DrawFaceZBuffer(hDC, cv1, cv2, cv3, color);
+		}
 	}
 }

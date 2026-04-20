@@ -1,6 +1,6 @@
 #include "Camera.h"
 
-void CCamera::SetCamera() {
+CCamera::CCamera() {
 	m_Viewport = std::make_unique<CViewport>();
 }
 

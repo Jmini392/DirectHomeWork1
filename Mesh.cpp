@@ -28,6 +28,22 @@ CCubeMesh::CCubeMesh(float w, float h, float d) {
 	CalculateLocalBoundingBox();
 }
 
+CPlaneMesh::CPlaneMesh(float w, float h) {
+	float fHalfWidth = w * 0.5f;
+	float fHalfHeight = h * 0.5f;
+	VerticesArray = {
+		CVertex(-fHalfWidth, 0, +fHalfHeight), // 0
+		CVertex(+fHalfWidth, 0, +fHalfHeight), // 1
+		CVertex(+fHalfWidth, 0, -fHalfHeight), // 2
+		CVertex(-fHalfWidth, 0, -fHalfHeight)  // 3
+	};
+	IndicesArray = {
+		0, 1, 2,
+		0, 2, 3
+	};
+	CalculateLocalBoundingBox();
+}
+
 CObjMesh::CObjMesh(const std::string& filename) {
 	std::ifstream file(filename);
 	if (!file.is_open()) {

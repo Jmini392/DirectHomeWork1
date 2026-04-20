@@ -33,5 +33,10 @@ private:
 	POINT OldCursorPos;
 	bool isSceneChanged = false;
 	bool isMouseCaptured = true; // 마우스 캡처(회전 모드) 상태 변수 추가
-	float itemSpawnTimer = 0.0f; // 아이템 생성 타이머
+	
+	float enemySpawnTimer = 0.f; // 적 생성 타이머
+	int totalSpawnedEnemies = 0; // 현재까지 스폰된 총 적의 수
+
+	bool isGameOver = false; // 게임 오버 상태 변수
+	bool isGameClear = false; // 게임 클리어 상태 변수
 };

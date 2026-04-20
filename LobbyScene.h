@@ -21,5 +21,6 @@ public:
 private:
 	float elapsedTime = 0.0f;
 	bool isSceneChanged = false;
+	bool isHelpWindowOpen = false; // 게임 방법 창 열림 여부 변수 추가
 	HBITMAP m_hTitleImage = NULL;
 };

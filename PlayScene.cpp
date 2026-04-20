@@ -15,9 +15,10 @@ void CPlayScene::Exit() {
 }
 
 void CPlayScene::BuildObjects() {
+	// 카메라 객체 생성
 	m_Camera = std::make_unique<CCamera>();
-	m_Camera->SetCamera();
 
+	// 플레이어 객체 생성
 	m_Player = std::make_shared<CPlayer>();
 	m_Player->SetCamera(m_Camera.get());
 	m_Player->SetPosition(0.f, 0.f, 0.f);
@@ -42,48 +43,52 @@ void CPlayScene::BuildObjects() {
 		}
 	}
 
+	// 벽 추가
 	for (int i = 0; i < 8; ++i) {
-		float angle = i * 45.f * (XM_PI / 180.f); // 45도 간격으로 배치
+		float angle = i * 45.f * (XM_PI / 180.f);
 		float x = 170 * cosf(angle);
 		float z = 170 * sinf(angle);
 
 		std::shared_ptr<CWall>pWall = std::make_shared<CWall>();
-		pWall->SetPosition(x, 10.f, z);
+		pWall->SetPosition(x, 40.f, z);
 		pWall->SetRotation(0.f, -angle, 0.f);
 		if (i % 2 == 0) pWall->SetColor(RGB(150, 150, 150));
 		else pWall->SetColor(RGB(100, 100, 100));
 		AddGameObject(pWall);
-	}	
-
-	// 적 객체 추가
-	std::shared_ptr<CEnemy> pEnemy1 = std::make_shared<CEnemy>(0);
-	pEnemy1->SetPosition(0.f, 0.f, 50.f);
-	pEnemy1->SetTarget(m_Player);
-	AddGameObject(pEnemy1);
-	std::shared_ptr<CEnemy> pEnemy2 = std::make_shared<CEnemy>(1);
-	pEnemy2->SetPosition(50.f, 0.f, 0.f);
-	pEnemy2->SetTarget(m_Player);
-	AddGameObject(pEnemy2);
-	std::shared_ptr<CEnemy> pEnemy3 = std::make_shared<CEnemy>(2);
-	pEnemy3->SetPosition(-50.f, 0.f, 0.f);
-	pEnemy3->SetTarget(m_Player);
-	AddGameObject(pEnemy3);
+	}
 }
 
 void CPlayScene::AnimateObjects(float time) {
-	// 아이템 스폰 (5초마다)
-	itemSpawnTimer += time;
-	if (itemSpawnTimer >= 5.0f) {
-		itemSpawnTimer -= 5.0f; // 타이머 초기화
+	if (!isMouseCaptured || isGameOver || isGameClear) time = 0.f;
 
-		// 맵 범위 내에서 랜덤한 위치 생성
-		float randomX = (float)FIELD_RANDOM;
-		float randomZ = (float)FIELD_RANDOM;
+	// 적 스폰 (5초마다, 최대 15마리까지만 소환)
+	if (totalSpawnedEnemies < 15) {
+		enemySpawnTimer += time;
+		if (enemySpawnTimer >= 5.0f) {
+			enemySpawnTimer -= 5.0f; // 타이머 초기화
+			for (int i = 0; i < 2; ++i) {
+				if (totalSpawnedEnemies >= 15) break; // 15마리를 넘지 않도록 예외 처리
 
-		// 새 아이템 생성 후 리스트에 추가
-		std::shared_ptr<CItem> pNewItem = std::make_shared<CItem>();
-		pNewItem->SetPosition(randomX, -2.f, randomZ);		
-		AddGameObject(pNewItem);
+				// 적 종류 랜덤 (0, 1, 2)
+				int enemyType = rand() % 3;
+				std::shared_ptr<CEnemy> pNewEnemy = std::make_shared<CEnemy>(enemyType);
+
+				// 벽 쪽에 가깝게 랜덤 위치 설정 (반지름 활용)
+				// 원형의 바깥쪽 테두리(반지름 대략 150 근처)에서 나오게 하기 위한 각도 계산
+				float angle = (rand() % 360) * (XM_PI / 180.f);
+
+				// 반지름 140.f ~ 160.f 사이의 외곽 위치 (벽이 170에 위치함)
+				float radius = 140.f + (rand() % 21);
+				float spawnX = radius * cosf(angle);
+				float spawnZ = radius * sinf(angle);
+
+				pNewEnemy->SetPosition(spawnX, 0.f, spawnZ);
+				pNewEnemy->SetTarget(m_Player);
+				AddGameObject(pNewEnemy);
+
+				totalSpawnedEnemies++; // 스폰된 적 카운트 증가
+			}
+		}
 	}
 
 	// 상태 갱신 및 죽은 객체 삭제
@@ -93,7 +98,14 @@ void CPlayScene::AnimateObjects(float time) {
 
 		if ((*it)->isdead) {
 			if ((*it)->GetType() == ObjectType::PLAYER) {
-				isSceneChanged = true; // 플레이어가 죽으면 씬 전환 플래그 설정
+				isGameOver = true; // 플레이어가 죽으면 게임 오버
+			}
+			else if ((*it)->GetType() == ObjectType::ENEMY) {
+				// 죽은 위치에 아이템 드랍
+				std::shared_ptr<CItem> pItem = std::make_shared<CItem>();
+				XMFLOAT3 enemyPos = (*it)->GetPosition();
+				pItem->SetPosition(enemyPos.x, 0.f, enemyPos.z);
+				AddGameObject(pItem);
 			}
 			it = m_GameObjects.erase(it);
 		}
@@ -130,7 +142,7 @@ void CPlayScene::AnimateObjects(float time) {
 }
 
 void CPlayScene::DrawObjects(HDC hDC) {
-	//-----------------------------------------------------------------------------
+	// -----------------------------------------------------------------------------
 	// 오브젝트 그리기
 	CPipeLine mpipeline;
 
@@ -153,6 +165,7 @@ void CPlayScene::DrawObjects(HDC hDC) {
 	mpipeline.SetProjMatrix(m_Camera->GetProjMatrix());
 	mpipeline.SetViewportMatrix(m_Camera->GetViewportMatrix());
 
+	int EnemyCount = 0; // 적의 수 카운트 변수
 	for (auto pObj : m_GameObjects) {
 		pObj->SetWorldMatrix();
 		mpipeline.SetWorldMatrix(pObj->GetWorldMatrix());
@@ -162,9 +175,78 @@ void CPlayScene::DrawObjects(HDC hDC) {
 			CMesh* mesh = pObj->GetMesh().get();
 			mpipeline.DrawObject(hDC, mesh, color);
 		}
+		// 적의 수 카운트
+		if (pObj->GetType() == ObjectType::ENEMY) {
+			EnemyCount++;
+		}
 	}
-	//-----------------------------------------------------------------------------
+	if (totalSpawnedEnemies >= 15 && EnemyCount == 0 && !isGameOver) {
+		isGameClear = true; // 적이 모두 제거되면 게임 클리어
+	}
+	// ---------------------------------------------------------------------
 	// UI 그리기
+	SetTextColor(hDC, RGB(0, 0, 0)); // 검은색 글씨
+	SetBkMode(hDC, TRANSPARENT); // 배경 투명
+
+	// 폰트 생성
+	HFONT hFont = CreateFont(24, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
+		DEFAULT_CHARSET, OUT_OUTLINE_PRECIS, CLIP_DEFAULT_PRECIS,
+		CLEARTYPE_QUALITY, VARIABLE_PITCH, TEXT("Arial"));
+	HFONT hOldFont = (HFONT)SelectObject(hDC, hFont);
+
+	// 남은 플레이어 수
+	RECT rectPlayer = { 20, 20, 300, 50 };
+	TCHAR szPlayerText[64];
+	_stprintf_s(szPlayerText, _T("Bullet : %d"), m_Player->GetBulletCount());
+	DrawText(hDC, szPlayerText, -1, &rectPlayer, DT_LEFT | DT_TOP | DT_SINGLELINE);
+
+	// 남은 적의 수
+	RECT rectEnemy = { 20, 50, 300, 80 };
+	TCHAR szEnemyText[64];
+	_stprintf_s(szEnemyText, _T("Enemy : %d"), EnemyCount);
+	DrawText(hDC, szEnemyText, -1, &rectEnemy, DT_LEFT | DT_TOP | DT_SINGLELINE);
+
+	// 잡은 적 수
+	RECT rectScore = { 20, 80, 300, 110 };
+	TCHAR szScoreText[64];
+	_stprintf_s(szScoreText, _T("%d / 15"), totalSpawnedEnemies);
+	DrawText(hDC, szScoreText, -1, &rectScore, DT_LEFT | DT_TOP | DT_SINGLELINE);
+
+	// 게임 오버 혹은 게임 클리어
+	if (isGameOver || isGameClear) {
+		RECT rectMain;
+		GetClipBox(hDC, &rectMain);
+		int centerY = (rectMain.bottom - rectMain.top) / 2;
+
+		// 폰트 생성 (큰 폰트와 안내용 중간 폰트)
+		HFONT hTitleFont = CreateFont(64, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
+			DEFAULT_CHARSET, OUT_OUTLINE_PRECIS, CLIP_DEFAULT_PRECIS,
+			CLEARTYPE_QUALITY, VARIABLE_PITCH, TEXT("Arial"));
+		
+		HFONT hInfoFont = CreateFont(32, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
+			DEFAULT_CHARSET, OUT_OUTLINE_PRECIS, CLIP_DEFAULT_PRECIS,
+			CLEARTYPE_QUALITY, VARIABLE_PITCH, TEXT("Arial"));
+
+		HFONT hOldFont2 = (HFONT)SelectObject(hDC, hTitleFont);
+		RECT rectTitle = { 0, centerY - 120, rectMain.right, centerY };
+		if (isGameOver) DrawText(hDC, _T("Game Over!"), -1, &rectTitle, DT_CENTER | DT_TOP | DT_SINGLELINE);
+		else if (isGameClear) DrawText(hDC, _T("Game Clear!"), -1, &rectTitle, DT_CENTER | DT_TOP | DT_SINGLELINE);
+		
+		SelectObject(hDC, hInfoFont);
+		RECT rectInfo = { 0, centerY + 30, rectMain.right, centerY + 80 };
+		DrawText(hDC, _T("Press 'R' to return"), -1, &rectInfo, DT_CENTER | DT_TOP | DT_SINGLELINE);
+
+		SelectObject(hDC, hOldFont2);
+
+		// 생성한 자원 해제
+		DeleteObject(hTitleFont);
+		DeleteObject(hInfoFont);
+	}
+
+	// 사용한 기본 폰트 정리
+	SelectObject(hDC, hOldFont);
+	DeleteObject(hFont);
+	// -----------------------------------------------------------------------------
 }
 
 SceneType CPlayScene::GetNextScene() {
@@ -173,15 +255,16 @@ SceneType CPlayScene::GetNextScene() {
 }
 
 void CPlayScene::Input() {
-	// 커서가 숨겨져있으면
+	if (isGameOver || isGameClear) return;
+
 	if (isMouseCaptured) {
 		static UCHAR pKeyBuffer[256];
 		if (::GetKeyboardState(pKeyBuffer)) {
 			int dir = 0;
-			if (pKeyBuffer['W'] & 0xF0) dir = 1;
-			if (pKeyBuffer['S'] & 0xF0) dir = -1;
-			if (pKeyBuffer['A'] & 0xF0) dir = -2;
-			if (pKeyBuffer['D'] & 0xF0) dir = 2;
+			if (pKeyBuffer['W'] & 0x80) dir = 1;
+			if (pKeyBuffer['S'] & 0x80) dir = -1;
+			if (pKeyBuffer['A'] & 0x80) dir = -2;
+			if (pKeyBuffer['D'] & 0x80) dir = 2;
 			m_Player->Move(dir);
 		}
 
@@ -203,12 +286,14 @@ void CPlayScene::KeyboardProcessing(HWND hWnd, UINT nMessageID, WPARAM wParam, L
 	case WM_KEYDOWN:
 		switch (wParam) {
 		case 'R':
-			Exit();
+			if (isGameOver || isGameClear) Exit();
 			break;
 		case VK_SHIFT:
+			if (isGameOver || isGameClear) return;
 			if (isMouseCaptured) if (auto bullet = m_Player->Fire()) AddGameObject(bullet);
 			break;
 		case VK_ESCAPE:
+			if (isGameOver || isGameClear) return;
 			if (isMouseCaptured) {
 				ShowCursor(TRUE); // 커서 보이기
 				isMouseCaptured = false; // 마우스 캡처 비활성화
@@ -229,6 +314,7 @@ void CPlayScene::KeyboardProcessing(HWND hWnd, UINT nMessageID, WPARAM wParam, L
 }
 
 void CPlayScene::MouseProcessing(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam) {
+	if (isGameOver || isGameClear) return;
 	switch (nMessageID) {
 	case WM_LBUTTONDOWN:
 		if (!isMouseCaptured) {

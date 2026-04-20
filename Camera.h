@@ -19,10 +19,8 @@ public:
 
 class CCamera {
 public:
-	CCamera() {}
+	CCamera();
 	virtual ~CCamera() {}
-
-	void SetCamera();
 
 	void SetPosition(float x, float y, float z) { EYE = XMFLOAT3(x, y, z); }
 	void SetRotation(float x, float y, float z) { Rotation = XMFLOAT3(x, y, z); }
