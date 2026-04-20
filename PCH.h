@@ -23,7 +23,6 @@
 #include <chrono>
 #include <memory>
 #include <random>
-#include <map>
 
 #include <DirectXMath.h>
 #include <DirectXPackedVector.h>
@@ -39,12 +38,20 @@ using namespace DirectX::PackedVector;
 #define PI 3.14159265358979323846f
 
 inline int Random() {
-	std::default_random_engine dre;
-	std::uniform_int_distribution<int> uid(0, 1);
+	static std::default_random_engine dre{ std::random_device{}() };
+	static std::uniform_int_distribution<int> uid(0, 1);
 	return uid(dre);
 }
 
 #define RANDOM Random()
+
+inline int FieldRandom() {
+	static std::default_random_engine dre{ std::random_device{}() };
+	static std::uniform_int_distribution<int> uid(-130, 130);
+	return uid(dre);
+}
+
+#define FIELD_RANDOM FieldRandom()
 
 //3차원 벡터의 연산 
 namespace Vector3 {

@@ -1,8 +1,5 @@
 #pragma once
 #include "PCH.h"
-#include "TitleScene.h"
-#include "LobbyScene.h"
-#include "PlayScene.h"
 
 enum class SceneType {
 	NONE,

@@ -28,6 +28,22 @@ public:
 
 	std::vector<CVertex> VerticesArray; // 정점 배열
 	std::vector<DWORD> IndicesArray; // 인덱스 배열
+
+	// DirectX 바운딩 박스 객체
+	BoundingOrientedBox m_LocalBoundingBox;
+
+	// 메시 버텍스 세팅 이후 이 함수를 한 번 호출해 줍니다. (CubeMesh나 ObjMesh 생성자의 마지막)
+	void CalculateLocalBoundingBox() {
+		if (VerticesArray.empty()) return;
+
+		// CreateFromPoints 인자: 바운딩 박스 객체, 버텍스 개수, 첫 번째 XMFLOAT3 포인터, 구조체 크기 간격
+		BoundingOrientedBox::CreateFromPoints(
+			m_LocalBoundingBox,
+			VerticesArray.size(),
+			&(VerticesArray[0].v),
+			sizeof(CVertex)
+		);
+	}
 };
 
 class CCubeMesh : public CMesh {

@@ -24,6 +24,8 @@ CCubeMesh::CCubeMesh(float w, float h, float d) {
 		3, 5, 0, 3, 6, 5, // Left face
 		1, 7, 2, 1, 4, 7  // Right face
 	};
+
+	CalculateLocalBoundingBox();
 }
 
 CObjMesh::CObjMesh(const std::string& filename) {
@@ -62,4 +64,6 @@ CObjMesh::CObjMesh(const std::string& filename) {
 			}
 		}
 	}
+
+	CalculateLocalBoundingBox();
 }

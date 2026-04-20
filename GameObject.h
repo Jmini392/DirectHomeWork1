@@ -2,6 +2,15 @@
 #include "PCH.h"
 #include "Mesh.h"
 
+enum class ObjectType {
+	PLAYER,
+	ENEMY,
+	WALL,
+	FLOOR,
+	ITEM,
+	BULLET,
+};
+
 class CGameObject {
 public:
 	CGameObject() {}
@@ -13,13 +22,30 @@ public:
 	void SetColor(COLORREF color) { MeshColor = color; }
 	void SetWorldMatrix();
 
+	// 타입 관련 Getter / Setter
+	void SetType(ObjectType type) { Type = type; }
+	ObjectType GetType() const { return Type; }
+
 	std::shared_ptr<CMesh> GetMesh() { return mesh; }
 	XMFLOAT3 GetPosition() { return Position; }
 	XMFLOAT3 GetRotation() { return Rotation; }
 	COLORREF GetColor() { return MeshColor; }
 	XMFLOAT4X4 GetWorldMatrix() { return WorldMatrix; }
 
+	virtual BoundingOrientedBox GetWorldBoundingBox() {
+		BoundingOrientedBox worldBoundingBox;
+		if (mesh) {
+			BoundingOrientedBox localBoundingBox = mesh->m_LocalBoundingBox;
+			XMMATRIX matWorld = XMLoadFloat4x4(&WorldMatrix);
+			localBoundingBox.Transform(worldBoundingBox, matWorld);
+		}
+		return worldBoundingBox;
+	}
+
 	virtual void Animate(float time) {}
+
+	// 충돌 시 호출될 가상 함수
+	virtual void OnCollision(std::shared_ptr<CGameObject> pOther) {}
 
 	void Move(float x, float y, float z) { Position.x += x; Position.y += y; Position.z += z; }
 	void Rotate(float x, float y, float z) { Rotation.x += x; Rotation.y += y; Rotation.z += z; }
@@ -27,10 +53,11 @@ public:
 	bool isdead = false;
 private:
 	std::shared_ptr<CMesh> mesh; // 메시 객체
-	XMFLOAT3 Position = { 0.f, 0.f, 0.f }; // 게임 오브젝트의 위치
-	XMFLOAT3 Rotation = { 0.f, 0.f, 0.f }; // 게임 오브젝트의 회전
-	COLORREF MeshColor = RGB(255, 0, 0); // 게임 오브젝트의 색상
-	XMFLOAT4X4 WorldMatrix = Matrix4x4::Identity(); // 월드 행렬
+	XMFLOAT3 Position = { 0.f, 0.f, 0.f };
+	XMFLOAT3 Rotation = { 0.f, 0.f, 0.f };
+	COLORREF MeshColor = RGB(255, 0, 0);
+	XMFLOAT4X4 WorldMatrix = Matrix4x4::Identity();
+	ObjectType Type;
 };
 
 class CWall : public CGameObject {
@@ -51,13 +78,15 @@ public:
 	virtual ~CItem() {}
 
 	virtual void Animate(float time);
-
-	float randomValue;
+	virtual void OnCollision(std::shared_ptr<CGameObject> pOther) override;
+	int GetRandomValue() const { return randomValue; }
+private:
+	int randomValue;
 };
 
 class CBullet : public CGameObject {
 public:
-    CBullet() {}
+    CBullet() { SetType(ObjectType::BULLET); }
 	virtual ~CBullet() {}
 
 	virtual void SetPosition(float x, float y, float z) override { 
@@ -68,6 +97,7 @@ public:
     void SetSpeed(float s) { Speed = s; }
 	
  	virtual void Animate(float time);
+	virtual void OnCollision(std::shared_ptr<CGameObject> pOther) override;
 private:
 	XMFLOAT3 Direction = {0.f, 0.f, 1.f}; // 날아갈 방향
 	float Speed = 1.f; // 날아갈 속도

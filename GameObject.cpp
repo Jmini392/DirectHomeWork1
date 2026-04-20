@@ -14,13 +14,15 @@ void CGameObject::SetWorldMatrix() {
 }
 
 CWall::CWall() {
+	SetType(ObjectType::WALL);
 	// ¸Þ½Ã Å©±â °´Ã¼ °íÁ¤
-	std::shared_ptr<CMesh> pWallMesh = std::make_shared<CCubeMesh>(2.0f, 50.f, 45.f);
+	std::shared_ptr<CMesh> pWallMesh = std::make_shared<CCubeMesh>(2.0f, 100.f, 140.f);
 	// º® °´Ã¼ ÃÊ±âÈ­
 	SetMesh(pWallMesh);
 }
 
 CFloor::CFloor() {
+	SetType(ObjectType::FLOOR);
 	// ¸Þ½Ã Å©±â °´Ã¼ °íÁ¤
 	std::shared_ptr<CMesh> pFloorMesh = std::make_shared<CCubeMesh>(20.f, 1.f, 20.f);
 	// ¹Ù´Ú °´Ã¼ ÃÊ±âÈ­
@@ -28,6 +30,7 @@ CFloor::CFloor() {
 }
 
 CItem::CItem() {
+	SetType(ObjectType::ITEM);
 	randomValue = RANDOM;
 	// ¸Þ½Ã Å©±â °´Ã¼ °íÁ¤
 	std::shared_ptr<CMesh> pItemMesh = std::make_shared<CCubeMesh>(1.5f, 1.5f, 1.5f);
@@ -47,6 +50,12 @@ void CItem::Animate(float time) {
 	SetRotation(GetRotation().x, y, GetRotation().z);
 }
 
+void CItem::OnCollision(std::shared_ptr<CGameObject> pOther) {
+	if (pOther->GetType() == ObjectType::PLAYER) {
+		isdead = true;
+	}
+}
+
 void CBullet::Animate(float time) {
 	XMFLOAT3 pos = GetPosition();
 	
@@ -56,5 +65,13 @@ void CBullet::Animate(float time) {
 
 	// ÃÑ¾ËÀÌ »ý±â°í ÀÏÁ¤°Å¸® ¸Ö¾îÁö¸é ¼Ò¸ê Ã³¸®
 	XMFLOAT3 offset = Vector3::Subtract(pos, StartPosition);
-	if (Vector3::Length(offset) > 10.f) isdead = true;
+	// »ç°Å¸® 20.f ÀÌ»óÀÌ¸é ÃÑ¾Ë ¼Ò¸ê
+	if (Vector3::Length(offset) > 20.f) isdead = true;
+}
+
+void CBullet::OnCollision(std::shared_ptr<CGameObject> pOther) {
+	ObjectType otherType = pOther->GetType();
+	if (otherType == ObjectType::ENEMY || otherType == ObjectType::WALL) {
+		isdead = true;
+	}
 }

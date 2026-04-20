@@ -18,39 +18,11 @@ void CPlayScene::BuildObjects() {
 	m_Camera = std::make_unique<CCamera>();
 	m_Camera->SetCamera();
 
-	m_Player = std::make_unique<CPlayer>();
+	m_Player = std::make_shared<CPlayer>();
 	m_Player->SetCamera(m_Camera.get());
 	m_Player->SetPosition(0.f, 0.f, 0.f);
 	m_Player->SetRotation(0.f, 0.f, 0.f);
-
-	std::shared_ptr<CItem> pGameObject1 = std::make_shared<CItem>();
-	pGameObject1->SetPosition(10.f, -2.f, 20.f);
-
-	m_GameObjects.push_back(pGameObject1);
-
-	std::shared_ptr<CItem> pGameObject2 = std::make_shared<CItem>();
-	pGameObject2->SetPosition(35.f, -2.f, 10.f);
-
-	m_GameObjects.push_back(pGameObject2);
-
-	float wallWidth = 45.0f;  // 성벽의 너비
-	float radius = 150.0f;    // 중심으로부터의 거리
-	// 원의 둘레(2 * pi * r)를 벽의 너비로 나눕니다.
-	int numWalls = static_cast<int>((2.0f * PI * radius) / (wallWidth - 0.5f));
-	for (int i = 0; i < numWalls; ++i) {
-		float angle = (2.0f * PI / numWalls) * i;
-		float x = radius * cosf(angle);
-		float z = radius * sinf(angle);
-
-		std::shared_ptr<CWall>pWall = std::make_shared<CWall>();
-		pWall->SetPosition(x, 0.f, z);
-		pWall->SetRotation(0.f, -angle, 0.f);
-		if (i % 3 == 0) pWall->SetColor(RGB(150, 150, 150));
-		else if(i % 3 == 1) pWall->SetColor(RGB(120, 120, 120));
-		else pWall->SetColor(RGB(100, 100, 100));
-
-		m_GameObjects.push_back(pWall);
-	}
+	AddGameObject(m_Player);
 
 	// 바닥 추가
 	float tileSize = 20.0f; // 타일 한 칸의 크기
@@ -63,28 +35,97 @@ void CPlayScene::BuildObjects() {
 			float posZ = (j * tileSize) + (tileSize * 0.5f);
 
 			std::shared_ptr<CFloor> pFloorObj = std::make_shared<CFloor>();
-			pFloorObj->SetPosition(posX, -30.f, posZ);
+			pFloorObj->SetPosition(posX, -10.f, posZ);
 			if ((i + j) % 2 == 0) pFloorObj->SetColor(RGB(255, 100, 100));
 			else pFloorObj->SetColor(RGB(215, 60, 60));
-
-			m_GameObjects.push_back(pFloorObj);
+			AddGameObject(pFloorObj);
 		}
 	}
 
-	// 적 객체 추가
-	std::shared_ptr<CEnemy> pEnemy = std::make_shared<CEnemy>();
-	pEnemy->SetPosition(0.f, -2.f, 50.f);
-	pEnemy->SetColor(RGB(0, 255, 0));
+	for (int i = 0; i < 8; ++i) {
+		float angle = i * 45.f * (XM_PI / 180.f); // 45도 간격으로 배치
+		float x = 170 * cosf(angle);
+		float z = 170 * sinf(angle);
 
-	m_GameObjects.push_back(pEnemy);
+		std::shared_ptr<CWall>pWall = std::make_shared<CWall>();
+		pWall->SetPosition(x, 10.f, z);
+		pWall->SetRotation(0.f, -angle, 0.f);
+		if (i % 2 == 0) pWall->SetColor(RGB(150, 150, 150));
+		else pWall->SetColor(RGB(100, 100, 100));
+		AddGameObject(pWall);
+	}	
+
+	// 적 객체 추가
+	std::shared_ptr<CEnemy> pEnemy1 = std::make_shared<CEnemy>(0);
+	pEnemy1->SetPosition(0.f, 0.f, 50.f);
+	pEnemy1->SetTarget(m_Player);
+	AddGameObject(pEnemy1);
+	std::shared_ptr<CEnemy> pEnemy2 = std::make_shared<CEnemy>(1);
+	pEnemy2->SetPosition(50.f, 0.f, 0.f);
+	pEnemy2->SetTarget(m_Player);
+	AddGameObject(pEnemy2);
+	std::shared_ptr<CEnemy> pEnemy3 = std::make_shared<CEnemy>(2);
+	pEnemy3->SetPosition(-50.f, 0.f, 0.f);
+	pEnemy3->SetTarget(m_Player);
+	AddGameObject(pEnemy3);
 }
 
 void CPlayScene::AnimateObjects(float time) {
-	// 벡터(리스트) 순회 중 삭제를 안전하게 하기 위해 iterator(반복자)를 사용합니다.
+	// 아이템 스폰 (5초마다)
+	itemSpawnTimer += time;
+	if (itemSpawnTimer >= 5.0f) {
+		itemSpawnTimer -= 5.0f; // 타이머 초기화
+
+		// 맵 범위 내에서 랜덤한 위치 생성
+		float randomX = (float)FIELD_RANDOM;
+		float randomZ = (float)FIELD_RANDOM;
+
+		// 새 아이템 생성 후 리스트에 추가
+		std::shared_ptr<CItem> pNewItem = std::make_shared<CItem>();
+		pNewItem->SetPosition(randomX, -2.f, randomZ);		
+		AddGameObject(pNewItem);
+	}
+
+	// 상태 갱신 및 죽은 객체 삭제
 	for (auto it = m_GameObjects.begin(); it != m_GameObjects.end(); ) {
 		(*it)->Animate(time);
-		if ((*it)->isdead) it = m_GameObjects.erase(it); // isdead가 true인 경우 삭제
-		else ++it; // 다음 요소로 이동
+		(*it)->SetWorldMatrix(); 
+
+		if ((*it)->isdead) {
+			if ((*it)->GetType() == ObjectType::PLAYER) {
+				isSceneChanged = true; // 플레이어가 죽으면 씬 전환 플래그 설정
+			}
+			it = m_GameObjects.erase(it);
+		}
+		else ++it;
+	}
+
+	// 전체 객체 중첩 순회
+	for (size_t i = 0; i < m_GameObjects.size(); ++i) {
+		auto& obj1 = m_GameObjects[i];
+
+		for (size_t j = i + 1; j < m_GameObjects.size(); ++j) {
+			auto& obj2 = m_GameObjects[j];
+
+			// 둘 중 하나라도 소멸 상태면 검사 X
+			if (obj1->isdead || obj2->isdead) continue;
+
+			// 필요 없는 충돌은 타입 기반으로 제외 (최적화)
+			ObjectType type1 = obj1->GetType();
+			ObjectType type2 = obj2->GetType();
+			
+			// 바닥은 모든 충돌 체크에서 제외 (부하 방지)
+			if (type1 == ObjectType::FLOOR || type2 == ObjectType::FLOOR) continue;
+			
+			// 동족 간의 충돌 무시 (벽끼리, 적끼리, 총알끼리 등)
+			if (type1 == type2) continue;
+
+			// 두 객체의 바운딩 박스 교차 검사
+			if (obj1->GetWorldBoundingBox().Intersects(obj2->GetWorldBoundingBox())) {
+				obj1->OnCollision(obj2);
+				obj2->OnCollision(obj1);
+			}
+		}
 	}
 }
 
