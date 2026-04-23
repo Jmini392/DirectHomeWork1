@@ -18,19 +18,18 @@ void Core::OnCreate(HINSTANCE hInstance, HWND hWnd) {
 
 	m_hDCFrameBuffer = ::CreateCompatibleDC(hDC);
 	
-	// 기존 CreateCompatibleBitmap 대신 CreateDIBSection 사용
 	int width = m_ScreenRect.right - m_ScreenRect.left;
 	int height = m_ScreenRect.bottom - m_ScreenRect.top;
 
 	BITMAPINFO bmi = {0};
 	bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 	bmi.bmiHeader.biWidth = width;
-	bmi.bmiHeader.biHeight = -height; // Top-Down 렌더링
+	bmi.bmiHeader.biHeight = -height;
 	bmi.bmiHeader.biPlanes = 1;
-	bmi.bmiHeader.biBitCount = 32;    // 32비트 색상 (DWORD)
+	bmi.bmiHeader.biBitCount = 32;
 	bmi.bmiHeader.biCompression = BI_RGB;
 
-	// m_pPixelBuffer에 픽셀 배열의 시작 주소가 담기게 됩니다.
+	// m_pPixelBuffer에 픽셀 배열의 시작 주소가 담기게
 	m_hBitmapFrameBuffer = ::CreateDIBSection(hDC, &bmi, DIB_RGB_COLORS, (void**)&m_pPixelBuffer, NULL, 0);
 
 	::SelectObject(m_hDCFrameBuffer, m_hBitmapFrameBuffer);

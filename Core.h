@@ -45,7 +45,7 @@ private:
 	// 프레임 버퍼
 	HDC m_hDCFrameBuffer;
 	HBITMAP m_hBitmapFrameBuffer;
-	// 컬러 버퍼 화면 픽셀 데이터를 직접 조작하기 위한 1차원 포인터 배열 추가
+	// 컬러 버퍼
 	DWORD* m_pPixelBuffer = nullptr; 
 
 	// 게임 씬 객체

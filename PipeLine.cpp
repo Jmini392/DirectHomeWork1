@@ -11,7 +11,7 @@ void CPipeLine::ClearZBuffer() {
 }
 
 void CPipeLine::DrawFaceZBuffer(HDC hDC, CVertex v1, CVertex v2, CVertex v3, COLORREF color) {
-	// 1. 삼각형을 포함하는 최소한의 사각형(Bounding Box)을 구합니다.
+	// 삼각형을 포함하는 최소한의 바운딩 박스를 구합니다.
 	int minX = (std::max)(0, (int)(std::min)({ v1.v.x, v2.v.x, v3.v.x }));
 	int maxX = (std::min)(m_Width - 1, (int)(std::max)({ v1.v.x, v2.v.x, v3.v.x }));
 	int minY = (std::max)(0, (int)(std::min)({ v1.v.y, v2.v.y, v3.v.y }));
@@ -24,7 +24,7 @@ void CPipeLine::DrawFaceZBuffer(HDC hDC, CVertex v1, CVertex v2, CVertex v3, COL
 	// 나눗셈을 한 번만 수행하기 위해 역수를 구함
 	float invArea = 1.0f / area;
 
-	// [최적화] X, Y 증가에 따른 w0, w1, w2의 변화량(Step 값)을 미리 계산
+	// X, Y 증가에 따른 w0, w1, w2의 변화량을 계산
 	float dw0_dx = (v2.v.y - v3.v.y) * invArea;
 	float dw0_dy = (v3.v.x - v2.v.x) * invArea;
 	float dw1_dx = (v3.v.y - v1.v.y) * invArea;
@@ -40,7 +40,7 @@ void CPipeLine::DrawFaceZBuffer(HDC hDC, CVertex v1, CVertex v2, CVertex v3, COL
 	float w1_row = ((v3.v.x - px_start) * (v1.v.y - py_start) - (v1.v.x - px_start) * (v3.v.y - py_start)) * invArea;
 	float w2_row = 1.0f - w0_row - w1_row;
 
-	// [최적화] COLORREF 포맷을 여기서 단 한 번만 DWORD 형태로 변환하여 화면에 그릴 색상을 캐싱합니다.
+	// COLORREF 포맷을 여기서 단 한 번만 DWORD 형태로 변환하여 화면에 그릴 색상을 캐싱
 	DWORD finalColor = 0;
 	if (m_pPixelBuffer != nullptr) {
 		BYTE r = GetRValue(color);
@@ -49,7 +49,7 @@ void CPipeLine::DrawFaceZBuffer(HDC hDC, CVertex v1, CVertex v2, CVertex v3, COL
 		finalColor = (r << 16) | (g << 8) | b;
 	}
 
-	// 2. Bounding Box 순회
+	// 바운딩 박스 순회
 	float invZ1 = 1.0f / v1.v.z;
 	float invZ2 = 1.0f / v2.v.z;
 	float invZ3 = 1.0f / v3.v.z;
@@ -60,7 +60,7 @@ void CPipeLine::DrawFaceZBuffer(HDC hDC, CVertex v1, CVertex v2, CVertex v3, COL
 
 		for (int x = minX; x <= maxX; ++x) {
 			if (w0 >= 0.0f && w1 >= 0.0f && w2 >= 0.0f) {
-				// [원근 보정 보간] 1/Z 값을 선형 보간함
+				// 원근 보정 보간: 1/Z 값을 선형 보간함
 				float interpolatedInvZ = (w0 * invZ1) + (w1 * invZ2) + (w2 * invZ3);
 				float currentZ = 1.0f / interpolatedInvZ;
 
@@ -111,12 +111,12 @@ void CPipeLine::DrawObject(HDC hDC, CMesh* obj, COLORREF color) {
 			float d1 = XMVectorGetZ(v[j]) - near_z;
 			float d2 = XMVectorGetZ(v[next]) - near_z;
 
-			// 현재 정점이 Near Plane 앞(카메라 쪽)에 있으면 추가
+			// 현재 정점이 Near Plane 앞에 있으면 추가
 			if (d1 >= 0.0f) clippedPoly[polyCount++] = v[j];
 
-			// 선분이 Near Plane을 교차하면 교차점(Intersection) 계산 후 추가
+			// 선분이 Near Plane을 교차하면 교차점 계산 후 추가
 			if ((d1 >= 0.0f && d2 < 0.0f) || (d1 < 0.0f && d2 >= 0.0f)) {
-				float t = d1 / (d1 - d2); // 교차점까지의 비율
+				float t = d1 / (d1 - d2);
 				clippedPoly[polyCount++] = XMVectorLerp(v[j], v[next], t);
 			}
 		}
@@ -124,7 +124,7 @@ void CPipeLine::DrawObject(HDC hDC, CMesh* obj, COLORREF color) {
 		// 정점이 3개 미만이면 완전히 카메라 뒤로 넘어간 것이므로 그리지 않음
 		if (polyCount < 3) continue;
 
-		// 다각형(삼각형 또는 사각형)을 다시 삼각형으로 분할(Triangulation)
+		// 다각형(삼각형 또는 사각형)을 다시 삼각형으로 분할
 		int triangleCount = (polyCount == 3) ? 1 : 2;
 		XMVECTOR outTriangles[2][3];
 
@@ -149,8 +149,6 @@ void CPipeLine::DrawObject(HDC hDC, CMesh* obj, COLORREF color) {
 			XMVECTOR edge2 = tv3 - tv1;
 			XMVECTOR faceNormalVec = XMVector3Cross(edge1, edge2);
 			faceNormalVec = XMVector3Normalize(faceNormalVec);
-
-			// 카메라 위치가 (0,0,0)인 뷰 스페이스 기준이므로 내적 검사
 			if (XMVectorGetX(XMVector3Dot(faceNormalVec, tv1)) >= 0) continue;
 
 			// 투영 변환

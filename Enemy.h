@@ -14,6 +14,6 @@ public:
 	void SetTarget(std::shared_ptr<CGameObject> pTarget) { m_pTarget = pTarget; }
 private:
 	std::weak_ptr<CGameObject> m_pTarget;
-	float m_Speed = 0.f; // 적 이동 속도
+	float m_Speed = 0.f;
 	int health = 0;
 };

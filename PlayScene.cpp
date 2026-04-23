@@ -5,12 +5,12 @@ void CPlayScene::Enter() {
 
 	// 씬 진입 시 초기 마우스 위치 셋업
 	::GetCursorPos(&OldCursorPos);
-	ShowCursor(FALSE); // 커서 숨기기
-	isMouseCaptured = true; // 마우스 캡처(회전 모드) 활성화
+	ShowCursor(FALSE);
+	isMouseCaptured = true;
 }
 
 void CPlayScene::Exit() {
-	ShowCursor(TRUE); // 커서 보이기
+	ShowCursor(TRUE);
 	isSceneChanged = true;
 }
 
@@ -26,8 +26,8 @@ void CPlayScene::BuildObjects() {
 	AddGameObject(m_Player);
 
 	// 바닥 추가
-	float tileSize = 20.0f; // 타일 한 칸의 크기
-	int gridSize = 20; // 10x10 격자 (총 크기: 200x200)
+	float tileSize = 20.0f;
+	int gridSize = 20;
 	int halfGrid = gridSize / 2;
 	for (int i = -halfGrid; i < halfGrid; ++i) {
 		for (int j = -halfGrid; j < halfGrid; ++j) {
@@ -61,32 +61,25 @@ void CPlayScene::BuildObjects() {
 void CPlayScene::AnimateObjects(float time) {
 	if (!isMouseCaptured || isGameOver || isGameClear) time = 0.f;
 
-	// 적 스폰 (5초마다, 최대 15마리까지만 소환)
-	if (totalSpawnedEnemies < 15) {
+	// 적 스폰 (10초마다 소환)
+	if (totalSpawnedEnemies < maxEnemyCount) {
 		enemySpawnTimer += time;
-		if (enemySpawnTimer >= 5.0f) {
-			enemySpawnTimer -= 5.0f; // 타이머 초기화
-			for (int i = 0; i < 2; ++i) {
-				if (totalSpawnedEnemies >= 15) break; // 15마리를 넘지 않도록 예외 처리
+		if (enemySpawnTimer >= 10.0f) {
+			enemySpawnTimer -= 10.0f;
+			for (int i = 0; i < 3; ++i) {
+				if (totalSpawnedEnemies >= maxEnemyCount) break;
 
-				// 적 종류 랜덤 (0, 1, 2)
-				int enemyType = rand() % 3;
-				std::shared_ptr<CEnemy> pNewEnemy = std::make_shared<CEnemy>(enemyType);
+				std::shared_ptr<CEnemy> pNewEnemy = std::make_shared<CEnemy>(i);
 
-				// 벽 쪽에 가깝게 랜덤 위치 설정 (반지름 활용)
-				// 원형의 바깥쪽 테두리(반지름 대략 150 근처)에서 나오게 하기 위한 각도 계산
-				float angle = (rand() % 360) * (XM_PI / 180.f);
-
-				// 반지름 140.f ~ 160.f 사이의 외곽 위치 (벽이 170에 위치함)
-				float radius = 140.f + (rand() % 21);
-				float spawnX = radius * cosf(angle);
-				float spawnZ = radius * sinf(angle);
+				float angle = (FIELD_RANDOM * 45.f) * (XM_PI / 180.f);
+				float spawnX = 150.f * cosf(angle);
+				float spawnZ = 150.f * sinf(angle);
 
 				pNewEnemy->SetPosition(spawnX, 0.f, spawnZ);
 				pNewEnemy->SetTarget(m_Player);
 				AddGameObject(pNewEnemy);
-
-				totalSpawnedEnemies++; // 스폰된 적 카운트 증가
+				enemyCount++;
+				totalSpawnedEnemies++;
 			}
 		}
 	}
@@ -98,10 +91,11 @@ void CPlayScene::AnimateObjects(float time) {
 
 		if ((*it)->isdead) {
 			if ((*it)->GetType() == ObjectType::PLAYER) {
-				isGameOver = true; // 플레이어가 죽으면 게임 오버
+				isGameOver = true;
 			}
 			else if ((*it)->GetType() == ObjectType::ENEMY) {
 				// 죽은 위치에 아이템 드랍
+				enemyCount--;
 				std::shared_ptr<CItem> pItem = std::make_shared<CItem>();
 				XMFLOAT3 enemyPos = (*it)->GetPosition();
 				pItem->SetPosition(enemyPos.x, 0.f, enemyPos.z);
@@ -112,32 +106,30 @@ void CPlayScene::AnimateObjects(float time) {
 		else ++it;
 	}
 
-	// 전체 객체 중첩 순회
+	// 전체 객체 순회
 	for (size_t i = 0; i < m_GameObjects.size(); ++i) {
 		auto& obj1 = m_GameObjects[i];
-
 		for (size_t j = i + 1; j < m_GameObjects.size(); ++j) {
 			auto& obj2 = m_GameObjects[j];
-
-			// 둘 중 하나라도 소멸 상태면 검사 X
+			// 둘 중 하나라도 소멸 상태면 검사 제외
 			if (obj1->isdead || obj2->isdead) continue;
-
-			// 필요 없는 충돌은 타입 기반으로 제외 (최적화)
 			ObjectType type1 = obj1->GetType();
 			ObjectType type2 = obj2->GetType();
-			
-			// 바닥은 모든 충돌 체크에서 제외 (부하 방지)
+			// 바닥은 모든 충돌 체크에서 제외
 			if (type1 == ObjectType::FLOOR || type2 == ObjectType::FLOOR) continue;
-			
-			// 동족 간의 충돌 무시 (벽끼리, 적끼리, 총알끼리 등)
+			// 동족 간의 충돌 무시
 			if (type1 == type2) continue;
-
 			// 두 객체의 바운딩 박스 교차 검사
 			if (obj1->GetWorldBoundingBox().Intersects(obj2->GetWorldBoundingBox())) {
 				obj1->OnCollision(obj2);
 				obj2->OnCollision(obj1);
 			}
 		}
+	}
+
+	// 게임 클리어 조건 체크
+	if (totalSpawnedEnemies >= maxEnemyCount && enemyCount == 0 && !isGameOver) {
+		isGameClear = true;
 	}
 }
 
@@ -146,18 +138,15 @@ void CPlayScene::DrawObjects(HDC hDC) {
 	// 오브젝트 그리기
 	CPipeLine mpipeline;
 
-	// 코어(Core) 수정 없이 HDC에 바인딩된 DIBSection(픽셀 버퍼) 의 포인터를 얻어와 파이프라인에 연결합니다.
 	HBITMAP hBitmap = (HBITMAP)::GetCurrentObject(hDC, OBJ_BITMAP);
 	DIBSECTION ds;
 	if (::GetObject(hBitmap, sizeof(DIBSECTION), &ds) == sizeof(DIBSECTION)) {
 		mpipeline.SetPixelBuffer((DWORD*)ds.dsBm.bmBits);
 	}
 
-	// --- Z-버퍼 초기화 (PCH.h에 있는 FRAME_BUFFER_WIDTH/HEIGHT 사용) ---
 	mpipeline.InitZBuffer(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
 	mpipeline.ClearZBuffer();
 
-	// 카메라 뷰, 투영 행렬 세팅
 	m_Camera->SetViewMatrix();
 	m_Camera->SetProjMatrix();
 	m_Camera->SetViewportMatrix();
@@ -165,27 +154,18 @@ void CPlayScene::DrawObjects(HDC hDC) {
 	mpipeline.SetProjMatrix(m_Camera->GetProjMatrix());
 	mpipeline.SetViewportMatrix(m_Camera->GetViewportMatrix());
 
-	int EnemyCount = 0; // 적의 수 카운트 변수
 	for (auto pObj : m_GameObjects) {
 		pObj->SetWorldMatrix();
 		mpipeline.SetWorldMatrix(pObj->GetWorldMatrix());
-		// 게임 오브젝트의 색상과 메시를 가져와서 파이프라인에 전달하여 그립니다.
 		if (pObj->GetMesh()) {
 			COLORREF color = pObj->GetColor();
 			CMesh* mesh = pObj->GetMesh().get();
 			mpipeline.DrawObject(hDC, mesh, color);
 		}
-		// 적의 수 카운트
-		if (pObj->GetType() == ObjectType::ENEMY) {
-			EnemyCount++;
-		}
-	}
-	if (totalSpawnedEnemies >= 15 && EnemyCount == 0 && !isGameOver) {
-		isGameClear = true; // 적이 모두 제거되면 게임 클리어
 	}
 	// ---------------------------------------------------------------------
 	// UI 그리기
-	SetTextColor(hDC, RGB(0, 0, 0)); // 검은색 글씨
+	SetTextColor(hDC, RGB(0, 0, 0));
 	SetBkMode(hDC, TRANSPARENT); // 배경 투명
 
 	// 폰트 생성
@@ -194,7 +174,7 @@ void CPlayScene::DrawObjects(HDC hDC) {
 		CLEARTYPE_QUALITY, VARIABLE_PITCH, TEXT("Arial"));
 	HFONT hOldFont = (HFONT)SelectObject(hDC, hFont);
 
-	// 남은 플레이어 수
+	// 남은 총알 수
 	RECT rectPlayer = { 20, 20, 300, 50 };
 	TCHAR szPlayerText[64];
 	_stprintf_s(szPlayerText, _T("Bullet : %d"), m_Player->GetBulletCount());
@@ -203,13 +183,13 @@ void CPlayScene::DrawObjects(HDC hDC) {
 	// 남은 적의 수
 	RECT rectEnemy = { 20, 50, 300, 80 };
 	TCHAR szEnemyText[64];
-	_stprintf_s(szEnemyText, _T("Enemy : %d"), EnemyCount);
+	_stprintf_s(szEnemyText, _T("Enemy : %d"), enemyCount);
 	DrawText(hDC, szEnemyText, -1, &rectEnemy, DT_LEFT | DT_TOP | DT_SINGLELINE);
 
 	// 잡은 적 수
 	RECT rectScore = { 20, 80, 300, 110 };
 	TCHAR szScoreText[64];
-	_stprintf_s(szScoreText, _T("%d / 15"), totalSpawnedEnemies);
+	_stprintf_s(szScoreText, _T("%d / %d"), totalSpawnedEnemies, maxEnemyCount);
 	DrawText(hDC, szScoreText, -1, &rectScore, DT_LEFT | DT_TOP | DT_SINGLELINE);
 
 	// 게임 오버 혹은 게임 클리어
@@ -218,7 +198,6 @@ void CPlayScene::DrawObjects(HDC hDC) {
 		GetClipBox(hDC, &rectMain);
 		int centerY = (rectMain.bottom - rectMain.top) / 2;
 
-		// 폰트 생성 (큰 폰트와 안내용 중간 폰트)
 		HFONT hTitleFont = CreateFont(64, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
 			DEFAULT_CHARSET, OUT_OUTLINE_PRECIS, CLIP_DEFAULT_PRECIS,
 			CLEARTYPE_QUALITY, VARIABLE_PITCH, TEXT("Arial"));
@@ -238,15 +217,11 @@ void CPlayScene::DrawObjects(HDC hDC) {
 
 		SelectObject(hDC, hOldFont2);
 
-		// 생성한 자원 해제
 		DeleteObject(hTitleFont);
 		DeleteObject(hInfoFont);
 	}
-
-	// 사용한 기본 폰트 정리
 	SelectObject(hDC, hOldFont);
 	DeleteObject(hFont);
-	// -----------------------------------------------------------------------------
 }
 
 SceneType CPlayScene::GetNextScene() {
@@ -273,7 +248,7 @@ void CPlayScene::Input() {
 		float cxMouseDelta = (float)(CursorPos.x - OldCursorPos.x) / 3.0f; // 마우스 이동량을 3으로 나누어 회전 속도 조절
 		float cyMouseDelta = (float)(CursorPos.y - OldCursorPos.y) / 3.0f;
 		
-		// 마우스의 이동이 있었을 때만 회전 및 커서 원위치 (무한 회전 방지)
+		// 마우스의 이동이 있었을 때만 회전 및 커서 원위치
 		if (cxMouseDelta != 0.0f || cyMouseDelta != 0.0f) {
 			m_Player->Rotate(0.0f, cxMouseDelta, 0.0f); // 마우스의 X 이동량을 플레이어의 Y축 회전에 적용
 			SetCursorPos(OldCursorPos.x, OldCursorPos.y); // 커서를 이전 위치로 되돌리기
@@ -295,13 +270,13 @@ void CPlayScene::KeyboardProcessing(HWND hWnd, UINT nMessageID, WPARAM wParam, L
 		case VK_ESCAPE:
 			if (isGameOver || isGameClear) return;
 			if (isMouseCaptured) {
-				ShowCursor(TRUE); // 커서 보이기
-				isMouseCaptured = false; // 마우스 캡처 비활성화
+				ShowCursor(TRUE);
+				isMouseCaptured = false;
 			}
 			else {
-				ShowCursor(FALSE); // 커서 숨기기
-				isMouseCaptured = true; // 마우스 캡처 활성화
-				::GetCursorPos(&OldCursorPos); // 점프 방지를 위해 기준 위치 재설정
+				ShowCursor(FALSE);
+				isMouseCaptured = true;
+				::GetCursorPos(&OldCursorPos);
 			}			
 			break;
 		default:
@@ -320,7 +295,7 @@ void CPlayScene::MouseProcessing(HWND hWnd, UINT nMessageID, WPARAM wParam, LPAR
 		if (!isMouseCaptured) {
 			::ShowCursor(FALSE);
 			isMouseCaptured = true;
-			::GetCursorPos(&OldCursorPos); // 점프 방지를 위해 기준 위치 재설정
+			::GetCursorPos(&OldCursorPos);
 		}
 		break;
 	case WM_LBUTTONUP:

@@ -8,7 +8,6 @@ enum class SceneType {
 	PLAY,
 };
 
-// 기본 씬 인터페이스 (추상 클래스)
 class CScene {
 public:
 	CScene() {}
@@ -29,7 +28,6 @@ public:
 	virtual SceneType GetNextScene() { return SceneType::NONE; }
 };
 
-// 씬 매니저 일반 클래스 (Core가 소유하게 됨)
 class CSceneManager {
 public:
 	CSceneManager() {}

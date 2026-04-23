@@ -3,9 +3,7 @@
 
 CPlayer::CPlayer() {
 	SetType(ObjectType::PLAYER);
-	// 메시 크기 객체 고정
 	std::shared_ptr<CMesh> pEnemyMesh = std::make_shared<CCubeMesh>(4.f, 4.f, 4.f);
-	// 적 객체 초기화
 	SetMesh(pEnemyMesh);
 }
 
@@ -48,8 +46,8 @@ void CPlayer::Rotate(float x, float y, float z) {
 }
 
 std::shared_ptr<CGameObject> CPlayer::Fire() {
-	// 총알 객체를 동적으로 생성
-	if (bulletCount <= 0) return nullptr; // 총알이 없으면 발사하지 않음
+	// 총알 객체 생성
+	if (bulletCount <= 0) return nullptr;
 	bulletCount--;
 	std::shared_ptr<CMesh> pSphereMesh = std::make_shared<CObjMesh>("Sphere.obj");
 	
@@ -57,7 +55,6 @@ std::shared_ptr<CGameObject> CPlayer::Fire() {
 	pBullet->SetMesh(pSphereMesh);
 	pBullet->SetColor(RGB(255, 255, 50));
 
-	// 발사 방향(Forward)을 먼저 계산합니다.
 	XMFLOAT4X4 viewMatrix = m_pCamera->GetViewMatrix();
 	XMFLOAT3 forward = XMFLOAT3(viewMatrix._13, viewMatrix._23, viewMatrix._33);
 	
@@ -68,14 +65,11 @@ std::shared_ptr<CGameObject> CPlayer::Fire() {
 	pBullet->SetDirection(forward);
 	pBullet->SetSpeed(ShootSpeed); 
 
-	// 플레이어 위치를 기준으로 총알의 생성 위치를 정합니다. 
 	XMFLOAT3 pos = GetPosition();
-	float spawnOffset = 2.0f; // 플레이어의 중심에서 앞쪽으로 떨어뜨릴 거리 지정
+	float spawnOffset = 2.0f; // 플레이어의 중심에서 앞쪽으로 지정
 	
-	// 현재 위치에 전방 벡터 * 일정 거리
 	pBullet->SetPosition(pos.x + (forward.x * spawnOffset),pos.y, pos.z + (forward.z * spawnOffset));
 
-	// 총알 객체 반환
 	return pBullet;
 }
 
@@ -91,8 +85,8 @@ void CPlayer::OnCollision(std::shared_ptr<CGameObject> pOther) {
 			if (bulletCount > 20) bulletCount = 20; // 최대 총알 수 제한
 		}
 		else if (pOther->GetColor() == RGB(0, 255, 255)) { // 시안색: 속도 증가
-			MoveSpeed += 0.1f;
-			ShootSpeed += 5.0f;
+			MoveSpeed += 0.1f; // 이동 속도 증가
+			ShootSpeed += 5.0f; // 총알 발사 속도 증가
 		}
 	}
 	else if (otherType == ObjectType::WALL) {
@@ -101,8 +95,6 @@ void CPlayer::OnCollision(std::shared_ptr<CGameObject> pOther) {
 		if (m_pCamera) {
 			m_pCamera->SetPosition(m_PrevPosition.x, m_PrevPosition.y, m_PrevPosition.z);
 		}
-		
-		// 바운딩 박스를 즉시 갱신시키기 위해 WorldMatrix를 다시 계산해 주어야 추가 충돌 로직이 정상 작동합니다.
 		SetWorldMatrix();
 	}
 }

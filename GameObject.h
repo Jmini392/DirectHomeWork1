@@ -22,7 +22,6 @@ public:
 	void SetColor(COLORREF color) { MeshColor = color; }
 	void SetWorldMatrix();
 
-	// 타입 관련 Getter / Setter
 	void SetType(ObjectType type) { Type = type; }
 	ObjectType GetType() const { return Type; }
 
@@ -44,7 +43,6 @@ public:
 
 	virtual void Animate(float time) {}
 
-	// 충돌 시 호출될 가상 함수
 	virtual void OnCollision(std::shared_ptr<CGameObject> pOther) {}
 
 	void Move(float x, float y, float z) { Position.x += x; Position.y += y; Position.z += z; }
@@ -52,7 +50,7 @@ public:
 
 	bool isdead = false;
 private:
-	std::shared_ptr<CMesh> mesh; // 메시 객체
+	std::shared_ptr<CMesh> mesh;
 	XMFLOAT3 Position = { 0.f, 0.f, 0.f };
 	XMFLOAT3 Rotation = { 0.f, 0.f, 0.f };
 	COLORREF MeshColor = RGB(255, 0, 0);
@@ -91,7 +89,7 @@ public:
 
 	virtual void SetPosition(float x, float y, float z) override { 
 		CGameObject::SetPosition(x, y, z);
-		StartPosition = XMFLOAT3(x, y, z); // 총알이 발사된 위치 저장
+		StartPosition = XMFLOAT3(x, y, z);
 	}
     void SetDirection(XMFLOAT3 dir) { Direction = dir; }
     void SetSpeed(float s) { Speed = s; }
@@ -99,7 +97,7 @@ public:
  	virtual void Animate(float time);
 	virtual void OnCollision(std::shared_ptr<CGameObject> pOther) override;
 private:
-	XMFLOAT3 Direction = {0.f, 0.f, 1.f}; // 날아갈 방향
-	float Speed = 1.f; // 날아갈 속도
-	XMFLOAT3 StartPosition = { 0.f, 0.f, 0.f }; // 총알이 발사된 위치
+	XMFLOAT3 Direction = {0.f, 0.f, 1.f};
+	float Speed = 1.f;
+	XMFLOAT3 StartPosition = { 0.f, 0.f, 0.f };
 };

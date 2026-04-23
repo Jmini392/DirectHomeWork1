@@ -19,12 +19,12 @@ void CCamera::SetViewMatrix() {
 	float pitch = XMConvertToRadians(Rotation.x);
 	float yaw = XMConvertToRadians(Rotation.y);
 
-	// 구면 좌표계 공식을 이용하여 회전된 전방향(Look) 벡터 계산
+	// 구면 좌표계 공식을 이용하여 회전된 LOOK 벡터 계산
 	float fLookX = sinf(yaw) * cosf(pitch);
 	float fLookY = sinf(pitch);
 	float fLookZ = cosf(yaw) * cosf(pitch);
 
-	// 산출된 전방향을 현재 위치(EYE)에 더해서 바라보는 목표물(AT) 갱신
+	// LOOK벡터를 현재 위치에 더해서 바라보는 곳 갱신
 	AT.x = EYE.x + fLookX;
 	AT.y = EYE.y + fLookY;
 	AT.z = EYE.z + fLookZ;
@@ -51,7 +51,6 @@ void CCamera::SetProjMatrix() {
 	// 원근 투영 변환 행렬을 생성한다.
 	XMMATRIX mProj = XMMatrixPerspectiveFovLH(XMConvertToRadians(m_Viewport->Fov), m_Viewport->Aspect, m_Viewport->Near, m_Viewport->Far);
 
-	// 카메라 클래스의 ProjectionMatrix 멤버 변수에 원근 투영 변환 행렬을 저장한다
 	ProjectionMatrix = Matrix4x4::Identity();
 	XMStoreFloat4x4(&ProjectionMatrix, mProj);
 }
@@ -60,15 +59,14 @@ void CCamera::SetViewportMatrix() {
 	// 단위 행렬로 초기화
 	ViewportMatrix = Matrix4x4::Identity();
 
-	// NDC(-1 ~ 1) 좌표를 화면 픽셀 좌표로 변환하는 공식 적용
 	// X 좌표: [-1, 1] -> [ViewportX, ViewportX + ViewportWidth]
 	ViewportMatrix._11 = m_Viewport->ViewportWidth / 2.0f;
 	ViewportMatrix._41 = m_Viewport->ViewportX + (m_Viewport->ViewportWidth / 2.0f);
 
-	// Y 좌표: [1, -1] -> [ViewportY, ViewportY + ViewportHeight] (GDI Y축 반전 반영)
+	// Y 좌표: [1, -1] -> [ViewportY, ViewportY + ViewportHeight]
 	ViewportMatrix._22 = -m_Viewport->ViewportHeight / 2.0f;
 	ViewportMatrix._42 = m_Viewport->ViewportY + (m_Viewport->ViewportHeight / 2.0f);
 
-	// Z 좌표: [0, 1] 유지
+	// Z 좌표: [0, 1]
 	ViewportMatrix._33 = 1.0f;
 }
